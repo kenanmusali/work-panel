@@ -59,6 +59,7 @@ export const api = {
   // Diagram groups
   createGroup: (name, parentId) => request('POST', '/api/processes/group', { name, parentId: parentId ?? null }),
   renameGroup: (gid, name) => request('PUT', `/api/processes/group/${gid}`, { name }),
+  moveGroup: (gid, parentId) => request('PUT', `/api/processes/group/${gid}`, { parentId }),
   deleteGroup: (gid) => request('DELETE', `/api/processes/group/${gid}`),
 
   // Ordering (drag & drop)
