@@ -3,10 +3,13 @@ import jwt from 'jsonwebtoken';
 
 const router = express.Router();
 
+// Admin credentials come from the environment (.env locally, Vercel env vars
+// in production) — they were previously hardcoded here and silently ignored
+// whatever was set in AUTH_USERNAME / AUTH_PASSWORD.
 const USERS = [
   {
-    username: 'admin',
-    password: 'admin123',
+    username: process.env.AUTH_USERNAME?.trim() || 'admin',
+    password: process.env.AUTH_PASSWORD || 'admin123',
     role: 'admin'
   },
   {

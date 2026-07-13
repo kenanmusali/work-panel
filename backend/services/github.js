@@ -152,6 +152,15 @@ export async function putFile(p, contentObject, { message, sha } = {}) {
     return res.json();
   } catch (e) {
     console.error('[putFile] GitHub sync failed:', e.message);
+    // On Vercel the local mirror lives in /tmp and is wiped between cold
+    // starts, so a failed GitHub write means the edit is effectively lost —
+    // pretending success here is what made writes silently vanish. Surface
+    // it instead so the admin UI shows a real error.
+    if (isVercel) {
+      const err = new Error(`GitHub sync failed: ${e.message}`);
+      err.status = 502;
+      throw err;
+    }
     return { ok: true, githubSynced: false };
   }
 }
@@ -180,6 +189,11 @@ export async function deleteFile(p, { message } = {}) {
     return res.json();
   } catch (e) {
     console.error('[deleteFile] GitHub sync failed:', e.message);
+    if (isVercel) {
+      const err = new Error(`GitHub sync failed: ${e.message}`);
+      err.status = 502;
+      throw err;
+    }
     return { ok: true, githubSynced: false };
   }
 }
@@ -283,8 +297,12 @@ export async function putBinary(p, buffer, { message } = {}) {
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   } catch (e) {
-    // local copy already saved — surface the error so caller knows GH didn't sync
     console.error('[putBinary] GitHub sync failed:', e.message);
+    if (isVercel) {
+      const err = new Error(`GitHub sync failed: ${e.message}`);
+      err.status = 502;
+      throw err;
+    }
     return { ok: true, githubSynced: false };
   }
 }
@@ -312,6 +330,11 @@ export async function deleteBinary(p, { message } = {}) {
     return res.json();
   } catch (e) {
     console.error('[deleteBinary] GitHub sync failed:', e.message);
+    if (isVercel) {
+      const err = new Error(`GitHub sync failed: ${e.message}`);
+      err.status = 502;
+      throw err;
+    }
     return { ok: true, githubSynced: false };
   }
 }
@@ -350,6 +373,41 @@ export async function diagnose() {
     const f = await getFile('data/files/index.json');
     out.pdfsResolved = f ? (f.content?.pdfs?.length ?? 0) : 'NOT FOUND';
   } catch (e) { out.pdfsResolved = 'ERR: ' + e.message; }
+
+  // Read access alone isn't enough — a token can list/read a repo's contents
+  // while still lacking write permission, which is exactly the failure mode
+  // that made admin edits silently vanish. Actually attempt a write+delete
+  // against a throwaway path so this shows up here instead of only failing
+  // invisibly the next time someone edits something.
+  if (hasGithubConfig()) {
+    const probePath = 'data/.write-probe.json';
+    try {
+      const { GITHUB_BRANCH } = cfg();
+      const putRes = await fetch(urlFor(probePath), {
+        method: 'PUT',
+        headers: headers(),
+        body: JSON.stringify({
+          message: 'diagnostic write probe (auto-deleted)',
+          content: Buffer.from(JSON.stringify({ probe: true, ts: Date.now() })).toString('base64'),
+          branch: GITHUB_BRANCH
+        })
+      });
+      if (!putRes.ok) {
+        out.githubWriteAccess = { ok: false, status: putRes.status, error: await putRes.text() };
+      } else {
+        const putData = await putRes.json();
+        out.githubWriteAccess = { ok: true };
+        // clean up immediately
+        await fetch(urlFor(probePath), {
+          method: 'DELETE',
+          headers: headers(),
+          body: JSON.stringify({ message: 'cleanup write probe', sha: putData.content.sha, branch: GITHUB_BRANCH })
+        }).catch(() => {});
+      }
+    } catch (e) {
+      out.githubWriteAccess = { ok: false, error: e.message };
+    }
+  }
 
   return out;
 }
