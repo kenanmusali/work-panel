@@ -12,20 +12,27 @@ const app = express();
 const PORT = process.env.PORT || 4000;
  
 // CORS
+// Origins are normalized (trailing slash + case) so a small mismatch like
+// "https://maps-panel.vercel.app/" vs "https://maps-panel.vercel.app" doesn't
+// silently fail — and any rejection is logged so it's visible in Vercel logs
+// instead of just showing up as an unexplained CORS error in the browser.
+function normalizeOrigin(o) {
+  return String(o || '').trim().replace(/\/+$/, '').toLowerCase();
+}
 const allowed = (process.env.CORS_ORIGIN || '*')
   .split(',')
-  .map(s => s.trim());
+  .map(normalizeOrigin)
+  .filter(Boolean);
 
 app.use(cors({
   origin: (origin, cb) => {
-    if (
-      !origin ||
-      allowed.includes('*') ||
-      allowed.includes(origin)
-    ) {
-      return cb(null, true);
-    }
+    if (!origin) return cb(null, true); // same-origin / server-to-server / curl
+    if (allowed.includes('*')) return cb(null, true);
 
+    const norm = normalizeOrigin(origin);
+    if (allowed.includes(norm)) return cb(null, true);
+
+    console.warn('[CORS] rejected origin:', origin, '| allowed:', allowed);
     cb(new Error(`CORS: origin ${origin} not allowed`));
   },
   credentials: false
