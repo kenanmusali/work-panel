@@ -3,7 +3,7 @@ import { LogoFull } from './Logo.jsx';
 import {
   Search, LogOut, Plus, Loader2, Trash2, ChevronLeft,
   ChevronRight, ChevronDown, ChevronsDownUp, ChevronsUpDown,
-  Folder, FolderOpen, FolderPlus, Pencil, Edit3, GripVertical, Save, Check
+  Folder, FolderOpen, FolderPlus, Pencil, Edit3, GripVertical, Save, Check, Undo2
 } from './icons.jsx';
 import { Archive, ArchiveRestore } from 'lucide-react';
 import { api, setToken } from '../api/client.js';
@@ -54,6 +54,7 @@ export default function Home({ onOpen, onLogout, onBack }) {
   // pristineGroupsRef holds the last-saved-from-server snapshot so "Save All"
   // can diff against it and send only what actually changed.
   const pristineGroupsRef = useRef([]);
+  const pristineProcessesRef = useRef([]);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -112,6 +113,7 @@ export default function Home({ onOpen, onLogout, onBack }) {
         return o;
       });
       pristineGroupsRef.current = gs.map(g => ({ id: g.id, name: g.name, parentId: normPid(g) }));
+      pristineProcessesRef.current = data.processes || [];
       setDirty(false);
       setSaveError('');
     } catch (e) {
@@ -338,65 +340,106 @@ export default function Home({ onOpen, onLogout, onBack }) {
   }
 
   /* ---------- flush every staged folder change to the backend ---------- */
+  async function doFlush() {
+    const idMap = new Map(); // tempId -> real id
+    const resolve = (id) => (isTempId(id) && idMap.has(id)) ? idMap.get(id) : id;
+
+    // 1) create brand-new groups, parents before children, so a new
+    //    subgroup's parentId (possibly itself a temp id) can be resolved.
+    let remaining = groups.filter(g => isTempId(g.id));
+    let guard = 0;
+    while (remaining.length && guard++ < 50) {
+      const ready = remaining.filter(g => g.parentId == null || !isTempId(g.parentId) || idMap.has(g.parentId));
+      if (!ready.length) break; // shouldn't happen, safety valve
+      for (const g of ready) {
+        const parentId = g.parentId == null ? null : resolve(g.parentId);
+        const created = await api.createGroup(g.name, parentId);
+        idMap.set(g.id, created.id);
+      }
+      remaining = remaining.filter(g => !idMap.has(g.id));
+    }
+
+    // 2) existing groups: rename / move as needed
+    const pristineById = new Map(pristineGroupsRef.current.map(g => [g.id, g]));
+    for (const g of groups) {
+      if (isTempId(g.id)) continue;
+      const before = pristineById.get(g.id);
+      if (!before) continue;
+      if (before.name !== g.name) {
+        await api.renameGroup(g.id, g.name);
+      }
+      const newParentId = g.parentId == null ? null : resolve(g.parentId);
+      if (before.parentId !== newParentId) {
+        await api.moveGroup(g.id, newParentId);
+      }
+    }
+
+    // 3) deleted groups — only call delete on the topmost deleted group in
+    //    each removed subtree (backend cascades to subgroups + diagrams).
+    const currentIds = new Set(groups.filter(g => !isTempId(g.id)).map(g => g.id));
+    const deletedIds = pristineGroupsRef.current.filter(g => !currentIds.has(g.id)).map(g => g.id);
+    const deletedSet = new Set(deletedIds);
+    const deletedRoots = deletedIds.filter(id => {
+      const g = pristineById.get(id);
+      return !g.parentId || !deletedSet.has(g.parentId);
+    });
+    for (const gid of deletedRoots) {
+      await api.deleteGroup(gid);
+    }
+
+    // 4) final sibling order — send the fully-resolved current order so
+    //    display order matches exactly what was arranged locally.
+    const finalOrder = groups.filter(g => !isTempId(g.id) || idMap.has(g.id)).map(g => resolve(g.id));
+    await api.reorderGroups(finalOrder);
+
+    return idMap;
+  }
+
   async function saveAll() {
     if (!dirty || saving) return;
     setSaving(true);
     setSaveError('');
     try {
-      const idMap = new Map(); // tempId -> real id
-      const resolve = (id) => (isTempId(id) && idMap.has(id)) ? idMap.get(id) : id;
-
-      // 1) create brand-new groups, parents before children, so a new
-      //    subgroup's parentId (possibly itself a temp id) can be resolved.
-      let remaining = groups.filter(g => isTempId(g.id));
-      let guard = 0;
-      while (remaining.length && guard++ < 50) {
-        const ready = remaining.filter(g => g.parentId == null || !isTempId(g.parentId) || idMap.has(g.parentId));
-        if (!ready.length) break; // shouldn't happen, safety valve
-        for (const g of ready) {
-          const parentId = g.parentId == null ? null : resolve(g.parentId);
-          const created = await api.createGroup(g.name, parentId);
-          idMap.set(g.id, created.id);
-        }
-        remaining = remaining.filter(g => !idMap.has(g.id));
-      }
-
-      // 2) existing groups: rename / move as needed
-      const pristineById = new Map(pristineGroupsRef.current.map(g => [g.id, g]));
-      for (const g of groups) {
-        if (isTempId(g.id)) continue;
-        const before = pristineById.get(g.id);
-        if (!before) continue;
-        if (before.name !== g.name) {
-          await api.renameGroup(g.id, g.name);
-        }
-        const newParentId = g.parentId == null ? null : resolve(g.parentId);
-        if (before.parentId !== newParentId) {
-          await api.moveGroup(g.id, newParentId);
-        }
-      }
-
-      // 3) deleted groups — only call delete on the topmost deleted group in
-      //    each removed subtree (backend cascades to subgroups + diagrams).
-      const currentIds = new Set(groups.filter(g => !isTempId(g.id)).map(g => g.id));
-      const deletedIds = pristineGroupsRef.current.filter(g => !currentIds.has(g.id)).map(g => g.id);
-      const deletedSet = new Set(deletedIds);
-      const deletedRoots = deletedIds.filter(id => {
-        const g = pristineById.get(id);
-        return !g.parentId || !deletedSet.has(g.parentId);
-      });
-      for (const gid of deletedRoots) {
-        await api.deleteGroup(gid);
-      }
-
-      // 4) final sibling order — send the fully-resolved current order so
-      //    display order matches exactly what was arranged locally.
-      const finalOrder = groups.filter(g => !isTempId(g.id) || idMap.has(g.id)).map(g => resolve(g.id));
-      await api.reorderGroups(finalOrder);
-
+      await doFlush();
       await load();
     } catch (e) {
       setSaveError(e.message || 'Yadda saxlanmadı');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // Discard every staged (unsaved) folder create/rename/move/delete and go
+  // back to what's actually on the server.
+  function cancelAll() {
+    if (!dirty || saving) return;
+    if (!confirm('Yadda saxlanmamış qovluq dəyişikliklərini ləğv etmək istəyirsiniz?')) return;
+    setGroups(pristineGroupsRef.current.map(g => ({ ...g })));
+    setProcesses(pristineProcessesRef.current.map(p => ({ ...p })));
+    setExpanded(prev => {
+      const o = { ...prev };
+      pristineGroupsRef.current.forEach(g => { if (!(g.id in o)) o[g.id] = false; });
+      return o;
+    });
+    setDirty(false);
+    setSaveError('');
+  }
+
+  // A brand-new (unsaved) folder only exists locally — the backend needs a
+  // real id before a diagram can be created inside it. Rather than leaving
+  // the "add diagram" button disabled and confusing, silently save the
+  // pending folder structure first, then continue with the real id.
+  async function ensureGroupSaved(gid) {
+    if (!isTempId(gid)) return gid;
+    setSaving(true);
+    setSaveError('');
+    try {
+      const idMap = await doFlush();
+      await load();
+      return idMap.get(gid) ?? null;
+    } catch (e) {
+      setSaveError(e.message || 'Yadda saxlanmadı');
+      return null;
     } finally {
       setSaving(false);
     }
@@ -559,10 +602,13 @@ export default function Home({ onOpen, onLogout, onBack }) {
 
           {!isViewer && (
             <span className="group-actions" onClick={e => e.stopPropagation()}>
-              <button className="group-act-btn" title={isTempId(g.id)
-                  ? 'Əvvəlcə qrupu "Yadda saxla" ilə saxlayın' : 'Diaqram əlavə et'}
-                disabled={isTempId(g.id)}
-                onClick={() => setModal({ type: 'diagram-create', groupId: g.id })}>
+              <button className="group-act-btn" title="Diaqram əlavə et"
+                disabled={saving}
+                onClick={async () => {
+                  const gid = await ensureGroupSaved(g.id);
+                  if (gid == null) return;
+                  setModal({ type: 'diagram-create', groupId: gid });
+                }}>
                 <Plus size={16} />
               </button>
               <button className="group-act-btn" title="Alt qrup əlavə et"
@@ -698,6 +744,17 @@ export default function Home({ onOpen, onLogout, onBack }) {
               onClick={toggleCollapseAll}
             >
               {allOpen ? <ChevronsDownUp size={17} /> : <ChevronsUpDown size={17} />}
+            </button>
+          )}
+          {!isViewer && dirty && (
+            <button
+              className="icon-btn cancel-all-btn"
+              title="Yadda saxlanmamış dəyişiklikləri ləğv et"
+              onClick={cancelAll}
+              disabled={saving}
+            >
+              <Undo2 size={17} />
+              <span>Ləğv et</span>
             </button>
           )}
           {!isViewer && (

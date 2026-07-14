@@ -1216,6 +1216,12 @@ border-radius: var(--r-lg) var(--r-lg) 20px 20px;
 }
 .save-all-btn.dirty:hover { background: #b45309; border-color: #b45309; }
 .save-all-btn:disabled { opacity: 0.6; cursor: default; }
+.cancel-all-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 0 12px; width: auto; white-space: nowrap;
+}
+.cancel-all-btn:hover { color: #b91c1c; border-color: #b91c1c; }
+.cancel-all-btn:disabled { opacity: 0.6; cursor: default; }
 .process-item.drag-over {
   border-color: var(--primary);
   box-shadow: 0 0 0 2px var(--primary);

@@ -63,6 +63,7 @@ export const pdfsApi = {
 
   createGroup: (name, parentId) => jsonRequest('POST', '/api/pdfs/group', { name, parentId: parentId ?? null }),
   renameGroup: (gid, name) => jsonRequest('PUT', `/api/pdfs/group/${gid}`, { name }),
+  moveGroup: (gid, parentId) => jsonRequest('PUT', `/api/pdfs/group/${gid}`, { parentId }),
   deleteGroup: (gid) => jsonRequest('DELETE', `/api/pdfs/group/${gid}`),
 
   // Ordering (drag & drop)

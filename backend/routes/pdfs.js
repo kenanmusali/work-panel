@@ -90,13 +90,46 @@ router.post('/group', requireAdmin, async (req, res, next) => {
 router.put('/group/:gid', requireAdmin, async (req, res, next) => {
   try {
     const gid = Number(req.params.gid);
-    const name = String(req.body?.name || '').trim();
-    if (!name) return res.status(400).json({ error: 'Qrup adi teleb olunur' });
     const idx = await readIndex();
     const g = idx.groups.find(x => Number(x.id) === gid);
     if (!g) return res.status(404).json({ error: 'Qrup tapilmadi' });
-    g.name = name;
-    await writeIndex(idx, `Rename pdf group ${gid}`);
+
+    if (req.body?.name !== undefined) {
+      const name = String(req.body.name || '').trim();
+      if (!name) return res.status(400).json({ error: 'Qrup adi teleb olunur' });
+      g.name = name;
+    }
+
+    // Moving a group under a new parent (drag & drop nesting). Any nested
+    // subgroups/PDFs stay attached to this group's id, so they move along
+    // with it automatically — nothing else needs to change.
+    if (req.body?.parentId !== undefined) {
+      const newParentId = req.body.parentId === null ? null : Number(req.body.parentId);
+      if (newParentId !== null) {
+        if (newParentId === gid) {
+          return res.status(400).json({ error: 'Qrup öz-özünün alt qrupu ola bilməz' });
+        }
+        if (!idx.groups.some(x => Number(x.id) === newParentId)) {
+          return res.status(400).json({ error: 'Valideyn qrup tapılmadı' });
+        }
+        // reject moving a group into one of its own descendants (would create a cycle)
+        function isDescendant(candidateId, rootId) {
+          let frontier = [rootId];
+          while (frontier.length) {
+            const kids = idx.groups.filter(x => frontier.includes(Number(x.parentId)));
+            if (kids.some(k => Number(k.id) === candidateId)) return true;
+            frontier = kids.map(k => Number(k.id));
+          }
+          return false;
+        }
+        if (isDescendant(newParentId, gid)) {
+          return res.status(400).json({ error: 'Qrupu öz alt qrupunun içinə köçürmək olmaz' });
+        }
+      }
+      g.parentId = newParentId;
+    }
+
+    await writeIndex(idx, `Update pdf group ${gid}`);
     res.json(g);
   } catch (e) { next(e); }
 });
