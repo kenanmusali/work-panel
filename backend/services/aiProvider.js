@@ -197,7 +197,8 @@ async function callOpenAICompatible({ system, messages, model, apiKey, baseUrl, 
     tokensOut: data?.usage?.completion_tokens || 0
   };
 }
-
+console.log("MODEL:", model);
+console.log("ENV:", process.env.AI_MODEL);
 /**
  * Ask the configured free provider for a completion.
  * `messages` is [{ role: 'user'|'assistant', content }].
