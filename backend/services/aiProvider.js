@@ -9,7 +9,7 @@ const PROVIDERS = {
   gemini: {
     label: 'Google Gemini (AI Studio)',
     envKey: 'GEMINI_API_KEY',
-    // gemini-1.5-flash is the stable, high-speed free tier model.
+    // gemini-1.5-flash is the current stable free-tier model.
     defaultModel: 'gemini-1.5-flash',
     limits: { rpm: 15, rpd: 1500, tpm: 1000000 },
     docs: 'https://ai.google.dev/gemini-api/docs/rate-limits'
@@ -42,8 +42,10 @@ export function pickProvider() {
 export function providerInfo(name) {
   const p = PROVIDERS[name];
   if (!p) return null;
-  // Prioritize env AI_MODEL, then fallback to provider default
-  const modelName = (process.env.AI_MODEL || p.defaultModel).trim();
+  // Clean the model name from ENV or use default
+  const rawModel = process.env.AI_MODEL || p.defaultModel;
+  const modelName = rawModel.trim();
+  
   return {
     name,
     label: p.label,
@@ -116,12 +118,12 @@ export function getUsage() {
 function guardLocalLimits(info) {
   const u = getUsage();
   if (info.limits.rpd && u.requestsToday >= info.limits.rpd) {
-    const e = new Error(`Daily limit reached (${u.requestsToday}/${info.limits.rpd}).`);
+    const e = new Error(`Daily limit reached.`);
     e.status = 429;
     throw e;
   }
   if (info.limits.rpm && u.requestsThisMinute >= info.limits.rpm) {
-    const e = new Error(`Minute limit reached (${u.requestsThisMinute}/${info.limits.rpm}).`);
+    const e = new Error(`Minute limit reached.`);
     e.status = 429;
     throw e;
   }
@@ -132,13 +134,14 @@ function guardLocalLimits(info) {
  * ------------------------------------------------------------------ */
 
 async function callGemini({ system, messages, model, apiKey }) {
-  // Use v1 stable endpoint. Ensure no spaces in key/model.
+  // We MUST use v1beta for 'systemInstruction' and 'responseMimeType' to work
   const cleanKey = apiKey.trim();
   const cleanModel = model.trim();
 
-  const url = `https://generativelanguage.googleapis.com/v1/models/${encodeURIComponent(cleanModel)}:generateContent?key=${cleanKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(cleanModel)}:generateContent?key=${cleanKey}`;
   
   const body = {
+    // systemInstruction is supported in v1beta
     systemInstruction: { parts: [{ text: system }] },
     contents: messages.map(m => ({
       role: m.role === 'assistant' ? 'model' : 'user',
@@ -147,6 +150,7 @@ async function callGemini({ system, messages, model, apiKey }) {
     generationConfig: {
       temperature: 0.2,
       maxOutputTokens: 4096,
+      // responseMimeType is supported in v1beta
       responseMimeType: 'application/json'
     }
   };
@@ -160,7 +164,9 @@ async function callGemini({ system, messages, model, apiKey }) {
   const data = await res.json().catch(() => null);
 
   if (!res.ok) {
-    throw new Error(data?.error?.message || `Gemini API Error: ${res.status}`);
+    // If it still says "Model not found", it's usually a regional issue or typo
+    const msg = data?.error?.message || `Gemini Error ${res.status}`;
+    throw new Error(msg);
   }
 
   const text = (data?.candidates?.[0]?.content?.parts || [])
@@ -205,7 +211,7 @@ async function callOpenAICompatible({ system, messages, model, apiKey, baseUrl, 
 export async function askLLM({ system, messages }) {
   const name = pickProvider();
   if (!name) {
-    const e = new Error('AI Key not set. Add GEMINI_API_KEY to your environment.');
+    const e = new Error('AI Key not set.');
     e.status = 503;
     throw e;
   }
