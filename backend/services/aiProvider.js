@@ -43,13 +43,28 @@ export function pickProvider() {
   return null;
 }
 
+// Gemini generations Google has retired or closed to new API keys. 1.5 and 2.0
+// are fully shut down (404); 2.5 still answers for old projects but returns
+// "no longer available to new users" for keys created after the cutoff.
+// AI_MODEL lives in the Vercel dashboard, so a stale value there used to take
+// the whole assistant down — ignore it instead of trusting it blindly.
+const RETIRED_GEMINI = /^gemini-(1\.\d|2\.\d)/i;
+
+function resolveModel(name) {
+  const p = PROVIDERS[name];
+  const want = (process.env.AI_MODEL || '').trim();
+  if (!want) return p.defaultModel;
+  if (name === 'gemini' && RETIRED_GEMINI.test(want)) return p.defaultModel;
+  return want;
+}
+
 export function providerInfo(name) {
   const p = PROVIDERS[name];
   if (!p) return null;
   return {
     name,
     label: p.label,
-    model: process.env.AI_MODEL || p.defaultModel,
+    model: resolveModel(name),
     limits: p.limits,
     docs: p.docs
   };
