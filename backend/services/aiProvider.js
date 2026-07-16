@@ -12,7 +12,7 @@ const PROVIDERS = {
   gemini: {
     label: 'Google Gemini (AI Studio)',
     envKey: 'GEMINI_API_KEY',
-  defaultModel: 'gemini-3.5-flash',
+  defaultModel: 'gemini-1.5-flash',
     // Published free-tier limits. They change on Google's side, so this is
     // shown in the UI as a reference, not as a hard guarantee.
     limits: { rpm: 15, rpd: 1500, tpm: 1000000 },
