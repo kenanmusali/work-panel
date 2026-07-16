@@ -12,7 +12,7 @@ const PROVIDERS = {
   gemini: {
     label: 'Google Gemini (AI Studio)',
     envKey: 'GEMINI_API_KEY',
-  defaultModel: 'gemini-3.5-flash',
+    defaultModel: 'gemini-3.5-flash',
     // Published free-tier limits. They change on Google's side, so this is
     // shown in the UI as a reference, not as a hard guarantee.
     limits: { rpm: 15, rpd: 1500, tpm: 1000000 },
@@ -139,13 +139,8 @@ function guardLocalLimits(info) {
  * ------------------------------------------------------------------ */
 
 async function callGemini({ system, messages, model, apiKey }) {
-  // FORCE the model name here for a test:
-  const forcedModel = "gemini-3.5-flash"; 
-  
-  console.log("ATTEMPTING MODEL:", forcedModel);
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(forcedModel)}:generateContent?key=${encodeURIComponent(apiKey)}`;
-  
   const body = {
     systemInstruction: { parts: [{ text: system }] },
     contents: messages.map(m => ({
@@ -153,9 +148,16 @@ async function callGemini({ system, messages, model, apiKey }) {
       parts: [{ text: m.content }]
     })),
     generationConfig: {
-      temperature: 0.2,
-      maxOutputTokens: 4096,
+      // Gemini 3.x is a reasoning model: thinking tokens are billed against the
+      // SAME budget as the answer. "medium" (the default) burns thousands of
+      // them on this prompt, so the JSON came back truncated (MAX_TOKENS) and
+      // unparseable, and every turn took ~10s. "low" is enough for filling in
+      // our action schema, and the budget is big enough for a full diagram.
+      thinkingConfig: { thinkingLevel: process.env.AI_THINKING_LEVEL || 'low' },
+      maxOutputTokens: 16384,
       responseMimeType: 'application/json'
+      // temperature/top_p/top_k are no longer recommended on Gemini 3.x —
+      // the model is tuned for its defaults.
     }
   };
   const res = await fetch(url, {
@@ -167,12 +169,29 @@ async function callGemini({ system, messages, model, apiKey }) {
   if (!res.ok) {
     throw new Error(data?.error?.message || `Gemini ${res.status}`);
   }
-  const text = (data?.candidates?.[0]?.content?.parts || [])
-    .map(p => p.text || '').join('');
+
+  const cand = data?.candidates?.[0];
+  const text = (cand?.content?.parts || []).map(p => p.text || '').join('');
+  const reason = cand?.finishReason;
+
+  // Fail loudly instead of handing a half-written JSON object to the parser.
+  if (reason === 'MAX_TOKENS') {
+    throw new Error('AI cavabı token limitinə çatdı və yarımçıq kəsildi. Tapşırığı kiçik hissələrə bölün.');
+  }
+  if (!text.trim()) {
+    const blocked = data?.promptFeedback?.blockReason;
+    throw new Error(blocked
+      ? `AI sorğunu blokladı (${blocked}).`
+      : `AI boş cavab qaytardı (finishReason: ${reason || 'naməlum'}).`);
+  }
+
   return {
     text,
     tokensIn: data?.usageMetadata?.promptTokenCount || 0,
-    tokensOut: data?.usageMetadata?.candidatesTokenCount || 0
+    // thoughtsTokenCount is billed as output too — count it so the usage panel
+    // isn't lying about what a turn cost.
+    tokensOut: (data?.usageMetadata?.candidatesTokenCount || 0)
+      + (data?.usageMetadata?.thoughtsTokenCount || 0)
   };
 }
 

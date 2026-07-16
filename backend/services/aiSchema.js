@@ -87,6 +87,8 @@ SİYAHI EKRANI (context.view === "list") üçün:
   { "type":"delete_group",     "groupId":32 }
   { "type":"create_diagram",   "title":"...", "subtitle":"...", "groupId":6,
     "lanes":[...], "nodes":[...], "edges":[...] }        // aşağıdakı SPEC formatı
+  { "type":"rename_diagram",   "processId":107, "title":"...", "subtitle":"...", "groupId":6 }
+      // yalnız dəyişən sahələri yaz; groupId verilsə diaqram o qovluğa köçür
   { "type":"archive_diagram",  "processId":107 }
   { "type":"unarchive_diagram","processId":107 }
   { "type":"delete_diagram",   "processId":107 }
@@ -175,7 +177,7 @@ export function parseModelJson(text) {
   s = s.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
   try {
     return normalize(JSON.parse(s));
-  } catch { /* fall through to brace scan */ }
+  } catch { /* fall through */ }
 
   const start = s.indexOf('{');
   const end = s.lastIndexOf('}');
@@ -184,8 +186,58 @@ export function parseModelJson(text) {
       return normalize(JSON.parse(s.slice(start, end + 1)));
     } catch { /* ignore */ }
   }
-  // Not JSON at all — treat the whole thing as a plain chat reply.
+
+  // Cut off mid-object? Salvage what did arrive instead of losing the turn.
+  const repaired = repairJson(s);
+  if (repaired) return normalize(repaired);
+
+  // It looks like JSON but nothing can parse it. Do NOT hand the raw object
+  // back as "reply" — that is what dumped JSON into the chat bubble.
+  if (start >= 0) {
+    throw new Error('AI cavabı düzgün JSON qaytarmadı. Yenidən cəhd edin.');
+  }
+  // Genuinely plain prose — treat it as a chat reply.
   return { reply: s, ask: null, actions: [] };
+}
+
+/**
+ * Truncated JSON: walk the text, remember the bracket depth and string state at
+ * every position, then take the longest prefix that ends on a finished value
+ * and close the still-open brackets. `{"reply":"...","actions":[{...},{"typ`
+ * becomes a valid object with the actions that made it through.
+ */
+function repairJson(raw) {
+  const start = raw.indexOf('{');
+  if (start < 0) return null;
+  const s = raw.slice(start);
+
+  const states = new Array(s.length + 1);
+  const stack = [];
+  let inStr = false, esc = false;
+  states[0] = { inStr: false, close: '' };
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (c === '\\') esc = true;
+      else if (c === '"') inStr = false;
+    } else if (c === '"') inStr = true;
+    else if (c === '{') stack.push('}');
+    else if (c === '[') stack.push(']');
+    else if (c === '}' || c === ']') stack.pop();
+    states[i + 1] = { inStr, close: stack.slice().reverse().join('') };
+  }
+
+  const VALUE_END = '}]"0123456789efalstrue';   // }, ], string, number, literal
+  let tries = 0;
+  for (let i = s.length; i > 0 && tries < 500; i--) {
+    const st = states[i];
+    if (st.inStr) continue;                       // cannot cut inside a string
+    if (!VALUE_END.includes(s[i - 1])) continue;  // must cut after a full value
+    tries++;
+    try { return JSON.parse(s.slice(0, i) + st.close); } catch { /* shrink */ }
+  }
+  return null;
 }
 
 function normalize(obj) {

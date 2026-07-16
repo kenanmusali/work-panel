@@ -63,6 +63,16 @@ export function describeAction(a, ctx) {
         detail: `${specSummary(a)}.\nDİQQƏT: hazırkı bütün panel, node və əlaqələr əvəz olunacaq. "Yadda saxla"ya basmayana qədər serverə yazılmır — Ctrl+Z ilə geri ala bilərsiniz.`,
         danger: true, icon: 'sparkles'
       };
+    case 'rename_diagram':
+      return {
+        title: 'Diaqramı yenilə',
+        detail: `${procName(ctx, a.processId)}\n` + [
+          a.title != null ? `ad → "${a.title}"` : null,
+          a.subtitle != null ? `alt ad → "${a.subtitle}"` : null,
+          a.groupId != null ? `qovluq → ${groupName(ctx, a.groupId)}` : null
+        ].filter(Boolean).join('\n'),
+        icon: 'edit'
+      };
     case 'archive_diagram':
       return {
         title: 'Arxivə köçür',

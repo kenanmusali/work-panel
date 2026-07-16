@@ -15,7 +15,7 @@ const LANE_TOP_PAD = 30;
 const MIN_W = 2200;    // same defaults the "Yeni diaqram" flow uses
 const MIN_H = 900;
 
-function safeShape(s) {
+export function safeShape(s) {
   const v = String(s || '').toLowerCase();
   if (SHAPES.includes(v)) return v;
   // tolerate a few names the model reaches for
@@ -25,7 +25,7 @@ function safeShape(s) {
   if (v === 'data') return 'parallelogram';
   return 'rect';
 }
-function safeStyle(s) {
+export function safeStyle(s) {
   const v = String(s || '').toLowerCase();
   return STYLES.includes(v) ? v : 'solid';
 }

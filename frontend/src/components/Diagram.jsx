@@ -17,7 +17,7 @@ import { nodeDefaults } from './nodeStyle.js';
 import { resolveNodePlacement } from './nodeLayout.js';
 import AiButton from './ai/AiButton.jsx';
 import AiSidebar from './ai/AiSidebar.jsx';
-import { buildFromSpec, findLane, nextNodeId as nextFreeNodeId, portsFor } from './ai/aiBuild.js';
+import { buildFromSpec, findLane, nextNodeId as nextFreeNodeId, portsFor, safeShape, safeStyle } from './ai/aiBuild.js';
 
 const DRAFT_KEY = (id) => `absheron_draft_${id}`;
 const DRAFT_TS_KEY = (id) => `absheron_draft_${id}_ts`;
@@ -1095,8 +1095,11 @@ export default function Diagram({ processId, focusNodeId, onBack, onLogout }) {
           const p0 = processRef.current;
           if (!p0?.lanes?.length) { log.push('Əvvəlcə panel əlavə edin.'); break; }
           const lane = findLane(p0.lanes, a.lane ?? a.laneId) || p0.lanes[0];
-          const shape = a.shape || 'rect';
-          const style = a.style || 'solid';
+          // The model reaches for names like "rectangle" / "decision"; an
+          // unknown type renders as nothing on the canvas, so normalise it the
+          // same way the diagram builder does.
+          const shape = safeShape(a.shape);
+          const style = safeStyle(a.style);
           const text = a.text || 'Yeni addım';
           const def = nodeDefaults(shape);
           const id = nextFreeNodeId(p0.nodes);
@@ -1133,8 +1136,8 @@ export default function Diagram({ processId, focusNodeId, onBack, onLogout }) {
             nodes: p.nodes.map(n => {
               if (String(n.id) !== String(a.nodeId)) return n;
               const next = { ...n };
-              if (a.shape) next.type = a.shape;
-              if (a.style) next.style = a.style;
+              if (a.shape) next.type = safeShape(a.shape);
+              if (a.style) next.style = safeStyle(a.style);
               if (a.text != null) {
                 next.text = a.text;
                 try { next.h = autoNodeHeight(next, a.text); } catch { /* keep height */ }

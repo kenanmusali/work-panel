@@ -614,6 +614,18 @@ export default function Home({ onOpen, onLogout, onBack }) {
           openAfter = p.id;
           break;
         }
+        case 'rename_diagram': {
+          // Same call the \"Redaktə et\" modal makes — only the sent fields change.
+          const patch = {};
+          if (a.title != null) patch.title = a.title;
+          if (a.subtitle != null) patch.subtitle = a.subtitle;
+          if (a.groupId != null) patch.groupId = await ensureGroupSaved(a.groupId);
+          if (!Object.keys(patch).length) { log.push('Dəyişiləcək sahə göstərilmədi.'); break; }
+          await api.updateProcessMeta(a.processId, patch);
+          log.push(`Diaqram yeniləndi: "${patch.title || processes.find(p => Number(p.id) === Number(a.processId))?.title || a.processId}"`);
+          needsReload = true;
+          break;
+        }
         case 'archive_diagram':
           await api.archiveProcess(a.processId);
           log.push('Arxivə köçürüldü.');
