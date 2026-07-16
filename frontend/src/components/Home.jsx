@@ -11,6 +11,9 @@ import NameModal from './NameModal.jsx';
 import TitleEditButton from './TitleEditButton.jsx';
 import { importDiagramFromExcel, downloadTemplate } from './excel.js';
 import { importDiagramFromJson } from './diagramExport.js';
+import AiButton from './ai/AiButton.jsx';
+import AiSidebar from './ai/AiSidebar.jsx';
+import { buildFromSpec } from './ai/aiBuild.js';
 
 function fmtTime(d) {
   const h = d.getHours();
@@ -47,6 +50,7 @@ export default function Home({ onOpen, onLogout, onBack }) {
   const [busy, setBusy] = useState(false);
   const [settings, setSettings] = useState(null);
   const [pendingArchive, setPendingArchive] = useState(null); // process id awaiting confirm
+  const [aiOpen, setAiOpen] = useState(false);
   const searchInputRef = useRef(null);
 
   // ---- staged (unsaved) folder edits ----
@@ -542,6 +546,111 @@ export default function Home({ onOpen, onLogout, onBack }) {
     } catch (err) { alert('Silinə bilmədi: ' + err.message); }
   }
 
+  /* ---------- AI köməkçi ---------- */
+  // Rebuilt on every turn (not memoised) so the model never reasons about a
+  // group/process id that was renamed or deleted a moment ago.
+  function aiContext() {
+    return {
+      view: 'list',
+      role,
+      groups: groups.map(g => ({ id: g.id, name: g.name, parentId: normPid(g) })),
+      processes: processes.map(p => ({ id: p.id, title: p.title, subtitle: p.subtitle, groupId: p.groupId })),
+      archived: archived.map(p => ({ id: p.id, title: p.title, subtitle: p.subtitle })),
+      unsavedFolderChanges: dirty,
+      currentSearch: query || null,
+      hint: 'Bu, diaqramların siyahı ekranıdır. Diaqramın daxili node-larını dəyişmək üçün əvvəlcə open_diagram istifadə et.'
+    };
+  }
+
+  async function runAiActions(actions) {
+    const log = [];
+    let needsReload = false;
+    let openAfter = null;
+
+    for (const a of actions) {
+      switch (a.type) {
+        case 'create_group': {
+          // Staged exactly like the manual "Yeni qrup" flow — it lands in the
+          // tree straight away and goes to the server on "Hamısını yadda saxla".
+          const tempId = nextTempId();
+          setGroups(prev => [...prev, { id: tempId, name: a.name, parentId: a.parentId ?? null }]);
+          setExpanded(prev => ({ ...prev, [tempId]: true }));
+          setDirty(true);
+          log.push(`Qovluq yaradıldı: "${a.name}" (hələ yadda saxlanmayıb)`);
+          break;
+        }
+        case 'rename_group': {
+          setGroups(prev => prev.map(g => Number(g.id) === Number(a.groupId) ? { ...g, name: a.name } : g));
+          setDirty(true);
+          log.push(`Qovluq adlandırıldı: "${a.name}" (hələ yadda saxlanmayıb)`);
+          break;
+        }
+        case 'delete_group': {
+          const allIds = collectDescendantGroupIds(Number(a.groupId), groups);
+          setGroups(prev => prev.filter(x => !allIds.includes(x.id)));
+          setProcesses(prev => prev.filter(p => !allIds.includes(Number(p.groupId))));
+          setDirty(true);
+          log.push('Qovluq silindi (hələ yadda saxlanmayıb)');
+          break;
+        }
+        case 'create_diagram': {
+          // A staged folder has no server id yet, so flush first — same trick
+          // the "+" button uses.
+          const gid = await ensureGroupSaved(a.groupId ?? groups[0]?.id);
+          if (gid == null) { log.push('Xəta: qovluq təyin edilmədi.'); break; }
+          const built = buildFromSpec(a);
+          const p = await api.createProcess({
+            title: a.title || 'Yeni diaqram',
+            subtitle: a.subtitle || '',
+            groupId: gid,
+            width: built.width,
+            height: built.height,
+            lanes: built.lanes,
+            nodes: built.nodes,
+            edges: built.edges
+          });
+          log.push(`Diaqram yaradıldı: "${p.title}" — ${built.nodes.length} node, ${built.edges.length} əlaqə`);
+          needsReload = true;
+          openAfter = p.id;
+          break;
+        }
+        case 'archive_diagram':
+          await api.archiveProcess(a.processId);
+          log.push('Arxivə köçürüldü.');
+          needsReload = true;
+          break;
+        case 'unarchive_diagram':
+          await api.unarchiveProcess(a.processId);
+          log.push('Arxivdən çıxarıldı.');
+          needsReload = true;
+          break;
+        case 'delete_diagram':
+          await api.deleteProcess(a.processId);
+          log.push('Diaqram silindi.');
+          needsReload = true;
+          break;
+        case 'open_diagram':
+          openAfter = a.processId;
+          log.push('Diaqram açılır...');
+          break;
+        case 'filter':
+          setQuery(a.query || '');
+          setSearchOpen(true);
+          log.push(`Filtr tətbiq olundu: "${a.query}"`);
+          break;
+        case 'logout':
+          logout();
+          return log;
+        default:
+          log.push(`Naməlum əməliyyat: ${a.type}`);
+      }
+    }
+
+    if (needsReload) await load();
+    if (openAfter != null) { setAiOpen(false); onOpen(openAfter); }
+    return log;
+  }
+
   const q = query.trim().toLowerCase();
   function matches(p) {
     if (!q) return true;
@@ -737,6 +846,7 @@ export default function Home({ onOpen, onLogout, onBack }) {
               <Search size={17} />
             </button>
           </div>
+          <AiButton active={aiOpen} onClick={() => setAiOpen(v => !v)} />
           {groups.length > 0 && (
             <button
               className="icon-btn"
@@ -861,6 +971,21 @@ export default function Home({ onOpen, onLogout, onBack }) {
           })()}
         </div>
       </div>
+
+      {isAdmin && (
+        <AiSidebar
+          open={aiOpen}
+          onClose={() => setAiOpen(false)}
+          context={aiContext}
+          runActions={runAiActions}
+          suggestions={[
+            'SSO mövzusunda proses diaqramı yarat',
+            'Yeni qovluq yarat: Təhlükəsizlik prosesləri',
+            'Gömrüklə bağlı diaqramları tap',
+            'Nə edə bilərsən?'
+          ]}
+        />
+      )}
 
       {modal?.type === 'group-create' && (
         <NameModal heading={modal.parentId ? 'Yeni alt qrup' : 'Yeni qrup'} nameLabel="Qrup adı" namePlaceholder="Qrupun adı"

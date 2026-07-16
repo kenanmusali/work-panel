@@ -15,6 +15,9 @@ import { deriveAccentVars, deriveLaneVars, deriveEdgeVars, asColorString, normal
 import { autoNodeHeight } from './nodeMeasure.js';
 import { nodeDefaults } from './nodeStyle.js';
 import { resolveNodePlacement } from './nodeLayout.js';
+import AiButton from './ai/AiButton.jsx';
+import AiSidebar from './ai/AiSidebar.jsx';
+import { buildFromSpec, findLane, nextNodeId as nextFreeNodeId, portsFor } from './ai/aiBuild.js';
 
 const DRAFT_KEY = (id) => `absheron_draft_${id}`;
 const DRAFT_TS_KEY = (id) => `absheron_draft_${id}_ts`;
@@ -119,6 +122,7 @@ function repackLanes(lanes, nodes) {
 export default function Diagram({ processId, focusNodeId, onBack, onLogout }) {
   const role = localStorage.getItem('role');
   const isViewer = role === 'viewer';
+  const isAdmin = role === 'admin';
 
   const [process, setProcess] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -162,6 +166,8 @@ export default function Diagram({ processId, focusNodeId, onBack, onLogout }) {
   const [presentJumpDraft, setPresentJumpDraft] = useState(null);
   // A new edge awaiting confirmation because it would cross existing arrow(s).
   const [pendingEdge, setPendingEdge] = useState(null);
+  // AI assistant sidebar (admin only).
+  const [aiOpen, setAiOpen] = useState(false);
 
   // Multi-select: set of node ids selected together (edit mode).
   const [selectedIds, setSelectedIds] = useState([]);
@@ -1011,6 +1017,213 @@ export default function Diagram({ processId, focusNodeId, onBack, onLogout }) {
     });
   }, []);
 
+  /* ===================== AI köməkçi ===================== */
+  // A trimmed snapshot of the diagram: enough for the model to reason about
+  // ids, lanes and wiring, without shipping x/y/w/h it must never invent.
+  function aiContext() {
+    const p = processRef.current;
+    return {
+      view: 'diagram',
+      role,
+      unsavedChanges: dirty,
+      editMode,
+      diagram: p ? {
+        id: p.id,
+        title: p.title,
+        subtitle: p.subtitle || '',
+        lanes: (p.lanes || []).map(l => ({ id: l.id, label: l.label })),
+        nodes: (p.nodes || []).map(n => ({
+          id: n.id,
+          type: n.type,
+          style: n.style || 'solid',
+          laneId: n.laneId,
+          text: n.text,
+          general: n.info?.general?.filter(Boolean) || [],
+          risks: n.info?.risks?.filter(Boolean) || []
+        })),
+        edges: (p.edges || []).map(e => ({ from: e.from, to: e.to, s: e.s, e: e.e, dashed: !!e.dashed, label: e.label || '' }))
+      } : null,
+      hint: 'Bu, açıq diaqramın redaktə ekranıdır. Dəyişikliklər lokaldır — serverə yazmaq üçün "save" action-ı lazımdır.'
+    };
+  }
+
+  async function runAiActions(actions) {
+    const log = [];
+    // Anything that mutates the diagram goes through updateProcess(), so every
+    // AI edit lands in the undo stack and Ctrl+Z takes it back.
+    for (const a of actions) {
+      switch (a.type) {
+        case 'generate_diagram': {
+          const built = buildFromSpec(a);
+          updateProcess(p => ({
+            ...p,
+            lanes: built.lanes,
+            nodes: built.nodes,
+            edges: built.edges,
+            width: built.width,
+            height: built.height
+          }), null);
+          setSelection(null);
+          setSelectedIds([]);
+          if (!editMode) setEditMode(true);
+          log.push(`Diaqram quruldu: ${built.lanes.length} panel, ${built.nodes.length} node, ${built.edges.length} əlaqə. Ctrl+Z ilə geri ala bilərsiniz.`);
+          break;
+        }
+        case 'add_lane': {
+          updateProcess(p => {
+            const lane = { id: `lane-${Date.now()}`, label: a.label || 'Yeni panel', y: 0, h: LANE_MIN_H };
+            const r = repackLanes([...p.lanes, lane], p.nodes);
+            return { ...p, lanes: r.lanes, nodes: r.nodes };
+          });
+          log.push(`Panel əlavə edildi: "${a.label}"`);
+          break;
+        }
+        case 'delete_lane': {
+          const lane = findLane(processRef.current?.lanes, a.laneId);
+          if (!lane) { log.push('Panel tapılmadı.'); break; }
+          updateProcess(p => {
+            const gone = new Set(p.nodes.filter(n => n.laneId === lane.id).map(n => String(n.id)));
+            const nodes = p.nodes.filter(n => n.laneId !== lane.id);
+            const edges = p.edges.filter(e => !gone.has(String(e.from)) && !gone.has(String(e.to)));
+            const r = repackLanes(p.lanes.filter(l => l.id !== lane.id), nodes);
+            return { ...p, lanes: r.lanes, nodes: r.nodes, edges };
+          });
+          log.push(`Panel silindi: "${lane.label}"`);
+          break;
+        }
+        case 'add_node': {
+          const p0 = processRef.current;
+          if (!p0?.lanes?.length) { log.push('Əvvəlcə panel əlavə edin.'); break; }
+          const lane = findLane(p0.lanes, a.lane ?? a.laneId) || p0.lanes[0];
+          const shape = a.shape || 'rect';
+          const style = a.style || 'solid';
+          const text = a.text || 'Yeni addım';
+          const def = nodeDefaults(shape);
+          const id = nextFreeNodeId(p0.nodes);
+          let h = def.h;
+          try { h = autoNodeHeight({ type: shape, style, w: def.w }, text); } catch { /* default */ }
+          updateProcess(p => {
+            const l = p.lanes.find(x => x.id === lane.id) || p.lanes[0];
+            const laneNodes = p.nodes.filter(n => n.laneId === l.id);
+            // Land it to the right of whatever is already in the lane, then let
+            // the shared placement helper clear any leftover overlap.
+            const startX = laneNodes.length
+              ? Math.max(...laneNodes.map(n => n.x + n.w)) + 70
+              : 85;
+            const { x, y } = resolveNodePlacement(
+              { x: startX, y: l.y + 30, w: def.w, h },
+              laneNodes,
+              { laneTop: l.y }
+            );
+            const info = { general: (a.general?.length ? a.general : ['']) };
+            if (a.risks?.length) info.risks = a.risks;
+            const node = { id, type: shape, style, x, y, laneId: l.id, w: def.w, h, text, info };
+            const r = repackLanes(p.lanes, [...p.nodes, node]);
+            return { ...p, lanes: r.lanes, nodes: r.nodes };
+          });
+          setSelection({ kind: 'node', id });
+          log.push(`Node #${id} əlavə edildi: "${text}"`);
+          break;
+        }
+        case 'update_node': {
+          const exists = (processRef.current?.nodes || []).some(n => String(n.id) === String(a.nodeId));
+          if (!exists) { log.push(`Node #${a.nodeId} tapılmadı.`); break; }
+          updateProcess(p => ({
+            ...p,
+            nodes: p.nodes.map(n => {
+              if (String(n.id) !== String(a.nodeId)) return n;
+              const next = { ...n };
+              if (a.shape) next.type = a.shape;
+              if (a.style) next.style = a.style;
+              if (a.text != null) {
+                next.text = a.text;
+                try { next.h = autoNodeHeight(next, a.text); } catch { /* keep height */ }
+              }
+              if (a.general || a.risks) {
+                next.info = { ...(n.info || {}) };
+                if (a.general) next.info.general = a.general.length ? a.general : [''];
+                if (a.risks) next.info.risks = a.risks;
+              }
+              return next;
+            })
+          }));
+          log.push(`Node #${a.nodeId} yeniləndi.`);
+          break;
+        }
+        case 'delete_node': {
+          updateProcess(p => ({
+            ...p,
+            nodes: p.nodes.filter(n => String(n.id) !== String(a.nodeId)),
+            edges: p.edges.filter(e => String(e.from) !== String(a.nodeId) && String(e.to) !== String(a.nodeId))
+          }));
+          setSelection(null);
+          log.push(`Node #${a.nodeId} silindi.`);
+          break;
+        }
+        case 'add_edge': {
+          const p0 = processRef.current;
+          const from = p0?.nodes.find(n => String(n.id) === String(a.from));
+          const to = p0?.nodes.find(n => String(n.id) === String(a.to));
+          if (!from || !to) { log.push('Ox üçün node tapılmadı.'); break; }
+          // Ports come from the real geometry, not from the model's guess.
+          const { s, t } = portsFor(from, to);
+          updateProcess(p => {
+            const dup = p.edges.some(e => String(e.from) === String(from.id) && String(e.to) === String(to.id));
+            if (dup) return p;
+            const edge = { from: from.id, to: to.id, s, e: t, dashed: !!a.dashed };
+            if (a.label) edge.label = a.label;
+            return { ...p, edges: [...p.edges, edge] };
+          });
+          log.push(`Ox: #${from.id} → #${to.id}`);
+          break;
+        }
+        case 'delete_edge': {
+          updateProcess(p => ({
+            ...p,
+            edges: p.edges.filter(e => !(String(e.from) === String(a.from) && String(e.to) === String(a.to)))
+          }));
+          log.push(`Ox silindi: #${a.from} → #${a.to}`);
+          break;
+        }
+        case 'set_title': {
+          updateProcess(p => ({
+            ...p,
+            ...(a.title != null ? { title: a.title } : {}),
+            ...(a.subtitle != null ? { subtitle: a.subtitle } : {})
+          }));
+          log.push('Başlıq yeniləndi. (Siyahıdakı ad "Yadda saxla"dan sonra yenilənir.)');
+          break;
+        }
+        case 'relayout': {
+          updateProcess(p => {
+            const r = repackLanes(p.lanes, p.nodes);
+            return { ...p, lanes: r.lanes, nodes: r.nodes };
+          });
+          log.push('Yerləşmə səliqəyə salındı.');
+          break;
+        }
+        case 'save':
+          await save();
+          log.push('Yadda saxlanıldı.');
+          break;
+        case 'present':
+          setAiOpen(false);
+          startPresentation();
+          log.push('Təqdimat başladı.');
+          break;
+        case 'archive_diagram':
+          await onArchiveDiagram();
+          return log;
+        case 'logout':
+          logout();
+          return log;
+        default:
+          log.push(`Naməlum əməliyyat: ${a.type}`);
+      }
+    }
+    return log;
+  }
+
   return (
     <>
       <div className={`topbar ${presenting ? 'is-hidden' : ''}`}>
@@ -1067,6 +1280,8 @@ export default function Diagram({ processId, focusNodeId, onBack, onLogout }) {
             </div>
           )}
 
+          <AiButton active={aiOpen} onClick={() => setAiOpen(v => !v)} />
+
           {process && process.nodes.length > 0 && (
             <button
               className="pill-chip present-chip nospace edit-chip"
@@ -1106,6 +1321,21 @@ export default function Diagram({ processId, focusNodeId, onBack, onLogout }) {
           </button>
         </div>
       </div>
+
+      {isAdmin && !presenting && (
+        <AiSidebar
+          open={aiOpen}
+          onClose={() => setAiOpen(false)}
+          context={aiContext}
+          runActions={runAiActions}
+          suggestions={[
+            'Bu diaqramı izah et',
+            'SSO girişi üçün proses diaqramı qur',
+            'Sonuncu addımdan sonra təsdiq mərhələsi əlavə et',
+            'Riskləri olmayan node-ları tap'
+          ]}
+        />
+      )}
 
       {!isViewer && hasDraft && !editMode && !presenting && (
         <div className="draft-banner">

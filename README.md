@@ -227,3 +227,76 @@ All endpoints except `/api/login` require `Authorization: Bearer <token>`.
 ## License
 
 Private — internal use only.
+
+
+## AI Köməkçi (AI assistant)
+
+Admin-only chatbot in a right-hand sidebar, opened from the ✨ button next to the
+search icon. Understands English and Azerbaijani, **always replies in Azerbaijani**.
+
+### Setup — 2 minutes, free
+
+1. Get a free key at <https://aistudio.google.com/apikey>
+2. Add it as an env var:
+   - locally: `GEMINI_API_KEY=...` in `.env`
+   - on Vercel: **Settings → Environment Variables** on the **backend** project, then redeploy.
+
+That is the only required step. Free tier for `gemini-2.0-flash`: **15 req/min, 1500 req/day**.
+
+Alternative free providers (drop in either key instead, it is auto-detected):
+
+| Env var | Provider | Free tier |
+|---|---|---|
+| `GEMINI_API_KEY` | Google AI Studio | 15/min · 1500/day |
+| `GROQ_API_KEY` | Groq | 30/min · 1000/day |
+| `OPENROUTER_API_KEY` | OpenRouter (`:free` models) | 20/min · 50/day |
+
+Optional: `AI_PROVIDER=gemini|groq|openrouter` to force one, `AI_MODEL=...` to override the model.
+
+Live quota (used / limit, per minute and per day) is shown in the sidebar under the
+gauge icon. Counters live in the serverless instance's memory and reset on a cold
+start — the published provider limits next to them are the authoritative number.
+
+### What it can do
+
+- **Build diagrams from a prompt** — *"SSO mövzusunda proses diaqramı yarat"* produces
+  real swimlanes, shapes and arrows, not an empty template.
+- **Edit the open diagram** — add / update / delete nodes, lanes and arrows; change titles; relayout.
+- **Manage the list** — create, rename and delete folders; archive, restore, delete and open diagrams; filter the search.
+- **Run tools** — `save`, `Təqdimat` (presentation), archive, sign out.
+- **Ask before guessing** — if the request is ambiguous it asks a clarifying question
+  with tappable options instead of inventing an answer.
+
+### How it stays safe
+
+- `/api/ai/*` is **admin-only** server-side (`requireAdmin`), so hiding the button is not the only defence.
+- Nothing runs automatically. Every batch of actions opens a **confirm popup** listing
+  each operation in plain Azerbaijani; individual actions can be unchecked, destructive
+  ones are flagged red.
+- The model never writes coordinates. It emits a coordinate-free spec and
+  `ai/aiBuild.js` computes lanes, columns, positions and arrow ports using the app's
+  own `repackLanes` / `resolveNodePlacement` helpers — the same code the manual editor uses.
+- All diagram edits go through `updateProcess()`, so **Ctrl+Z undoes anything the AI did**,
+  and nothing reaches GitHub until you press *Yadda saxla*.
+- The full schema (`index.json`, `process-<id>.json`, shapes, styles, ports) is in the
+  system prompt, and a live context snapshot with the real ids is sent on every turn, so
+  it cannot invent a `groupId` or `nodeId`.
+
+### AI files
+
+```
+backend/
+├── routes/ai.js               ← POST /api/ai/chat, GET /api/ai/limits (admin only)
+└── services/
+    ├── aiProvider.js          ← Gemini / Groq / OpenRouter adapters + usage counters
+    └── aiSchema.js            ← system prompt (schema + action protocol + AZ rules)
+
+frontend/src/
+├── api/aiClient.js
+└── components/ai/
+    ├── AiButton.jsx           ← ✨ trigger next to search
+    ├── AiSidebar.jsx          ← chat, quota panel, clarifying questions
+    ├── AiActionPopup.jsx      ← confirm-before-run popup
+    ├── aiActions.js           ← Azerbaijani descriptions of each action
+    └── aiBuild.js             ← spec → real schema + auto layout
+```

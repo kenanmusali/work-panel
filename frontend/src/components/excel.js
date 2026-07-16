@@ -176,7 +176,6 @@ export function downloadTemplate() {
 }
 
 function buildWorkbook(p) {
-  // reuse export path against a throwaway object
   const wb = XLSX.utils.book_new();
   const meta = [
     ['sahə', 'dəyər'], ['title', p.title], ['subtitle', p.subtitle],
