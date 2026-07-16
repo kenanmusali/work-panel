@@ -110,7 +110,7 @@ export default function AiSidebar({ open, onClose, context, runActions, suggesti
         <div className="ai-head">
           <span className="ai-head-icon"><Sparkles size={16} /></span>
           <div className="ai-head-text">
-            <strong>ALM-AI</strong>
+            <strong>ALM-AI (Beta)</strong>
             <span>{limits?.active ? limits.active.model : 'konfiqurasiya edilməyib'}</span>
           </div>
           <button className="ai-icon-btn" title="Limitlər" onClick={() => setShowLimits(v => !v)}>
