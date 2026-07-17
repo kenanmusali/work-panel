@@ -97,6 +97,16 @@
       "name": "Abşeron Express MMC"
     }
   ],
-  "pdfs": [],
+  "pdfs": [
+    {
+      "id": 1,
+      "title": "Tırpark ümumi proses",
+      "subtitle": "ALM-PR-TP-001",
+      "filename": "Tırpark iş axışı.pdf",
+      "size": 131045,
+      "groupId": 21,
+      "uploadedAt": "2026-07-17T07:32:30.461Z"
+    }
+  ],
   "files": []
 }
