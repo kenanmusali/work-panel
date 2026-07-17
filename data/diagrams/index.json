@@ -123,6 +123,12 @@
       "title": "Terminal prosesləri ilə əlaqədar dolu yük avtomobillərinin Mərkəzə girişi və çıxışı",
       "subtitle": "ALM-IMS-PRD-TP-01",
       "groupId": 6
+    },
+    {
+      "id": 108,
+      "title": "Terminal prosesləri ilə əlaqədar dolu yük avtomobillərinin Mərkəzə girişi və çıxışı iş axışı",
+      "subtitle": "ALM-İMS-PRD-TP-001",
+      "groupId": 6
     }
   ]
 }
