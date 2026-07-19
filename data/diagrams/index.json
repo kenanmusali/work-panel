@@ -129,6 +129,12 @@
       "title": "Terminal prosesləri ilə əlaqədar dolu yük avtomobillərinin Mərkəzə girişi və çıxışı iş axışı",
       "subtitle": "ALM-İMS-PRD-TP-001",
       "groupId": 6
+    },
+    {
+      "id": 109,
+      "title": "Ekspedisiya xidmətlərin göstərilməsi çərçivəsində idxal və tranzit əməliyyatlarına dair daxil olmuş müştəri sorğularının emalı və icrasına dair iş axını",
+      "subtitle": "AE-001",
+      "groupId": 30
     }
   ]
 }
