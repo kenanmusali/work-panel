@@ -1,17 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
-import { Clock, CheckCircle2, AlertCircle, ChevronDown } from './icons.jsx';
+import { Clock,Signature, CheckCircle2, AlertCircle,CircleX, ChevronDown } from './icons.jsx';
 
 // Single source of truth for the three item statuses used across the
 // diagrams (İş Axışları) and PDF (Normativ Sənədlər) sections.
 //   progress → in progress   done → finished   notdone → not finished
 export const STATUS_META = {
-  progress: { label: 'Müzakirədə', Icon: clock,        cls: 'progress' },
+  progress: { label: 'Müzakirədə', Icon: AlertCircle,        cls: 'progress' },
 
   done:     { label: 'Təsdiqlənmiş ', Icon: CheckCircle2, cls: 'done' },
 
-  notdone:  { label: 'Təsdqlənməmiş',   Icon: circleX,  cls: 'notdone' },
+  notdone:  { label: 'Təsdqlənməmiş',   Icon: CircleX,  cls: 'notdone' },
 
-  sign:     { label: 'İmza Prosesində',  Icon: signature, cls: 'sign' },
+  sign:     { label: 'İmza Prosesində',  Icon: Signature, cls: 'sign' },
 };
 
 export const STATUS_ORDER = ['progress', 'done', 'notdone', 'sign'];
