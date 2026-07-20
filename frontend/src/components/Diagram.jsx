@@ -1381,7 +1381,7 @@ export default function Diagram({ processId, focusNodeId, onBack, onLogout }) {
           <div
             className={`diagram-container ${fitWidth && !editMode ? 'fit' : ''}`}
             ref={containerRef}
-            style={!isViewer && editMode && panelOpen ? { paddingTop: navbarH - 60, paddingRight: sidebarOpen ? 416 : undefined } : undefined}
+            style={!isViewer && editMode && panelOpen ? { paddingTop: navbarH - 60, marginRight: sidebarOpen ? 400 : undefined } : undefined}
           >
             {loading && (
               <div className="empty-state"><Loader2 size={20} className="spin" />Yüklənir...</div>
