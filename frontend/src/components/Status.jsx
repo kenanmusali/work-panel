@@ -5,11 +5,11 @@ import { Clock, CheckCircle2, AlertCircle, ChevronDown } from './icons.jsx';
 // diagrams (İş Axışları) and PDF (Normativ Sənədlər) sections.
 //   progress → in progress   done → finished   notdone → not finished
 export const STATUS_META = {
-  progress: { label: 'Müzakirədə', Icon: CheckCircle2,        cls: 'progress' },
+  progress: { label: 'Müzakirədə', Icon: clock,        cls: 'progress' },
 
-  done:     { label: 'Təsdiqlənmiş ', Icon: circleX, cls: 'done' },
+  done:     { label: 'Təsdiqlənmiş ', Icon: CheckCircle2, cls: 'done' },
 
-  notdone:  { label: 'Təsdqlənməmiş',   Icon: clock,  cls: 'notdone' },
+  notdone:  { label: 'Təsdqlənməmiş',   Icon: circleX,  cls: 'notdone' },
 
   sign:     { label: 'İmza Prosesində',  Icon: signature, cls: 'sign' },
 };
