@@ -690,6 +690,7 @@ function ShapeBg({ shape, style }) {
     preparation: '25,2 75,2 98,50 75,98 25,98 2,50',
     manualinput: '2,22 98,2 98,98 2,98',
     trapezoid: '22,4 78,4 98,96 2,96',
+    triangledown: '3,6 97,6 50,97',
   };
   if (POLY[shape]) {
     return (
@@ -972,6 +973,7 @@ const SHAPE_POLY = {
   manualinput:   [[2, 22], [98, 2], [98, 98], [2, 98]],
   trapezoid:     [[22, 4], [78, 4], [98, 96], [2, 96]],
   document:      [[0, 0], [100, 0], [100, 86], [50, 88], [0, 86]],
+  triangledown:  [[3, 6], [97, 6], [50, 97]],
 };
 
 // First point where the ray from the shape centre toward `target` crosses the

@@ -9,6 +9,7 @@ import { Archive, ArchiveRestore } from 'lucide-react';
 import { api, setToken } from '../api/client.js';
 import NameModal from './NameModal.jsx';
 import TitleEditButton from './TitleEditButton.jsx';
+import { StatusControl } from './Status.jsx';
 import { importDiagramFromExcel, downloadTemplate } from './excel.js';
 import { importDiagramFromJson } from './diagramExport.js';
 import AiButton from './ai/AiButton.jsx';
@@ -512,6 +513,12 @@ export default function Home({ onOpen, onLogout, onBack }) {
     } catch (err) { alert('Silinə bilmədi: ' + err.message); }
   }
 
+  async function changeStatus(p, status) {
+    setProcesses(prev => prev.map(x => x.id === p.id ? { ...x, status } : x));
+    try { await api.setProcessStatus(p.id, status); }
+    catch (err) { alert('Status dəyişdirilə bilmədi: ' + err.message); load(); }
+  }
+
   /* ---------- archive (two-step: ask, then confirm) ---------- */
   function requestArchive(e, p) {
     e.stopPropagation();
@@ -780,6 +787,9 @@ export default function Home({ onOpen, onLogout, onBack }) {
                   <div className="label">
                     <span className="row-title">{p.title}</span>
                     {p.subtitle ? <span className="row-subtitle">{p.subtitle}</span> : null}
+                  </div>
+                  <div className="row-status" onClick={e => e.stopPropagation()}>
+                    <StatusControl value={p.status} editable={isAdmin} onChange={(s) => changeStatus(p, s)} />
                   </div>
                   {!isViewer && (
                     <div className="row-actions" onClick={e => e.stopPropagation()}>

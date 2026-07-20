@@ -5,6 +5,7 @@ import cors from 'cors';
 import authRouter, { requireAuth } from './routes/auth.js';
 import processesRouter from './routes/processes.js';
 import pdfsRouter from './routes/pdfs.js';
+import templatesRouter from './routes/templates.js';
 import settingsRouter from './routes/settings.js';
 import aiRouter from './routes/ai.js';
 import { diagnose } from './services/github.js';
@@ -70,6 +71,7 @@ app.use(['/api', '/'], authRouter);
 // PROTECTED ROUTES
 app.use(['/api/processes', '/processes'], requireAuth, processesRouter);
 app.use(['/api/pdfs', '/pdfs'], requireAuth, pdfsRouter);
+app.use(['/api/templates', '/templates'], requireAuth, templatesRouter);
 app.use(['/api/settings', '/settings'], requireAuth, settingsRouter);
 app.use(['/api/ai', '/ai'], requireAuth, aiRouter);
 

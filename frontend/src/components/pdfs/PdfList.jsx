@@ -9,6 +9,7 @@ import {
 import { Archive, ArchiveRestore } from 'lucide-react';
 import { api, setToken } from '../../api/client.js';
 import { pdfsApi } from '../../api/pdfsClient.js';
+import { StatusControl } from '../Status.jsx';
 import PdfFormModal from './PdfFormModal.jsx';
 import NameModal from '../NameModal.jsx';
 import TitleEditButton from '../TitleEditButton.jsx';
@@ -49,7 +50,14 @@ function normPid(g) {
     : Number(g.parentId);
 }
 
-export default function PdfList({ onBack, onLogout }) {
+export default function PdfList({
+  onBack,
+  onLogout,
+  apiClient = pdfsApi,
+  pageTitleKey = 'pdf_page_title',
+  pageTitleDefault = 'Normativ Sənədlər',
+  withStatus = true,
+}) {
   const [now, setNow] = useState(new Date());
   const [groups, setGroups] = useState([]);
   const [pdfs, setPdfs] = useState([]);
@@ -119,7 +127,7 @@ export default function PdfList({ onBack, onLogout }) {
     setLoading(true);
     setError('');
     try {
-      const data = await pdfsApi.list();
+      const data = await apiClient.list();
       const gs = data.groups || [];
       const list = data.pdfs || []; // keep stored order (drag & drop reordering)
       setGroups(gs);
@@ -310,19 +318,19 @@ export default function PdfList({ onBack, onLogout }) {
       return byId.get(groupIds[k++]) || p;
     }).filter(Boolean);
     setPdfs(reordered);
-    try { await pdfsApi.reorderPdfs(Number(gid), groupIds); } catch { load(); }
+    try { await apiClient.reorderPdfs(Number(gid), groupIds); } catch { load(); }
   }
   function onItemDragEnd() { itemDrag.current = null; setItemOver(null); }
 
   async function viewPdf(p) {
     setBusy(p.id);
-    try { await pdfsApi.view(p.id); }
+    try { await apiClient.view(p.id); }
     catch (e) { alert('Xəta: ' + e.message); }
     finally { setBusy(null); }
   }
   async function downloadPdf(p) {
     setBusy(p.id);
-    try { await pdfsApi.download(p.id, p.filename); }
+    try { await apiClient.download(p.id, p.filename); }
     catch (e) { alert('Xəta: ' + e.message); }
     finally { setBusy(null); }
   }
@@ -330,9 +338,15 @@ export default function PdfList({ onBack, onLogout }) {
     e.stopPropagation();
     if (!confirm(`"${p.title}" PDF-i silmək istəyirsiniz?`)) return;
     try {
-      await pdfsApi.remove(p.id);
+      await apiClient.remove(p.id);
       setPdfs(prev => prev.filter(x => x.id !== p.id));
     } catch (err) { alert('Silinə bilmədi: ' + err.message); }
+  }
+
+  async function changeStatus(p, s) {
+    setPdfs(prev => prev.map(x => x.id === p.id ? { ...x, status: s } : x));
+    try { await apiClient.setStatus(p.id, s); }
+    catch (err) { alert('Status dəyişdirilə bilmədi: ' + err.message); load(); }
   }
 
   /* ---------- archive (two-step: ask, then confirm) ---------- */
@@ -347,7 +361,7 @@ export default function PdfList({ onBack, onLogout }) {
   async function confirmArchive(e, p) {
     e.stopPropagation();
     try {
-      await pdfsApi.archive(p.id);
+      await apiClient.archive(p.id);
       setPendingArchive(null);
       await load();
       setArchiveOpen(true);
@@ -355,22 +369,22 @@ export default function PdfList({ onBack, onLogout }) {
   }
   async function unarchivePdf(e, p) {
     e.stopPropagation();
-    try { await pdfsApi.unarchive(p.id); await load(); }
+    try { await apiClient.unarchive(p.id); await load(); }
     catch (err) { alert('Bərpa edilə bilmədi: ' + err.message); }
   }
   async function deleteArchivedPdf(e, p) {
     e.stopPropagation();
     if (!confirm(`"${p.title}" sənədini tamamilə silmək istəyirsiniz? Geri alına bilməz.`)) return;
     try {
-      await pdfsApi.remove(p.id);
+      await apiClient.remove(p.id);
       setArchived(prev => prev.filter(x => x.id !== p.id));
     } catch (err) { alert('Silinə bilmədi: ' + err.message); }
   }
 
   async function handleModalSave(payload) {
     try {
-      if (modal?.mode === 'create') await pdfsApi.create(payload);
-      else if (modal?.mode === 'edit') await pdfsApi.update(modal.pdf.id, payload);
+      if (modal?.mode === 'create') await apiClient.create(payload);
+      else if (modal?.mode === 'edit') await apiClient.update(modal.pdf.id, payload);
       setModal(null);
       await load();
     } catch (e) { alert('Xəta: ' + e.message); }
@@ -422,7 +436,7 @@ export default function PdfList({ onBack, onLogout }) {
       if (!ready.length) break; // shouldn't happen, safety valve
       for (const g of ready) {
         const parentId = g.parentId == null ? null : resolve(g.parentId);
-        const created = await pdfsApi.createGroup(g.name, parentId);
+        const created = await apiClient.createGroup(g.name, parentId);
         idMap.set(g.id, created.id);
       }
       remaining = remaining.filter(g => !idMap.has(g.id));
@@ -435,11 +449,11 @@ export default function PdfList({ onBack, onLogout }) {
       const before = pristineById.get(g.id);
       if (!before) continue;
       if (before.name !== g.name) {
-        await pdfsApi.renameGroup(g.id, g.name);
+        await apiClient.renameGroup(g.id, g.name);
       }
       const newParentId = g.parentId == null ? null : resolve(g.parentId);
       if (before.parentId !== newParentId) {
-        await pdfsApi.moveGroup(g.id, newParentId);
+        await apiClient.moveGroup(g.id, newParentId);
       }
     }
 
@@ -453,13 +467,13 @@ export default function PdfList({ onBack, onLogout }) {
       return !g.parentId || !deletedSet.has(g.parentId);
     });
     for (const gid of deletedRoots) {
-      await pdfsApi.deleteGroup(gid);
+      await apiClient.deleteGroup(gid);
     }
 
     // 4) final sibling order — send the fully-resolved current order so
     //    display order matches exactly what was arranged locally.
     const finalOrder = groups.filter(g => !isTempId(g.id) || idMap.has(g.id)).map(g => resolve(g.id));
-    await pdfsApi.reorderGroups(finalOrder);
+    await apiClient.reorderGroups(finalOrder);
 
     return idMap;
   }
@@ -634,6 +648,12 @@ export default function PdfList({ onBack, onLogout }) {
                     {p.subtitle ? <span className="row-subtitle">{p.subtitle}</span> : null}
                   </div>
 
+                  {withStatus && (
+                    <div className="row-status" onClick={e => e.stopPropagation()}>
+                      <StatusControl value={p.status} editable={isAdmin} onChange={(s) => changeStatus(p, s)} />
+                    </div>
+                  )}
+
                   <div className="pdf-actions">
                     <button className="action-btn" onClick={() => viewPdf(p)} disabled={busy === p.id} title="Bax">
                       {busy === p.id ? <Loader2 size={15} className="spin" /> : <Eye size={15} />}
@@ -763,13 +783,13 @@ export default function PdfList({ onBack, onLogout }) {
       <div className="home-wrap">
         <LogoFull size="large" />
         <h2 className="home-title">
-          {(settings?.pdf_page_title) || 'Normativ Sənədlər'}
+          {(settings?.[pageTitleKey]) || pageTitleDefault}
           {isAdmin && settings && (
             <TitleEditButton
               heading="Başlığı dəyiş"
               nameLabel="Səhifə başlığı"
-              name0={(settings?.pdf_page_title) || 'Normativ Sənədlər'}
-              onSave={({ name }) => saveSettings({ pdf_page_title: name })}
+              name0={(settings?.[pageTitleKey]) || pageTitleDefault}
+              onSave={({ name }) => saveSettings({ [pageTitleKey]: name })}
             />
           )}
         </h2>

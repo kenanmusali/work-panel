@@ -17,6 +17,7 @@ import { nodeDefaults } from './nodeStyle.js';
 import { resolveNodePlacement } from './nodeLayout.js';
 import AiButton from './ai/AiButton.jsx';
 import AiSidebar from './ai/AiSidebar.jsx';
+import { StatusControl } from './Status.jsx';
 import { buildFromSpec, findLane, nextNodeId as nextFreeNodeId, portsFor, safeShape, safeStyle } from './ai/aiBuild.js';
 
 const DRAFT_KEY = (id) => `absheron_draft_${id}`;
@@ -125,6 +126,7 @@ export default function Diagram({ processId, focusNodeId, onBack, onLogout }) {
   const isAdmin = role === 'admin';
 
   const [process, setProcess] = useState(null);
+  const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selection, setSelection] = useState(null);
@@ -331,6 +333,7 @@ export default function Diagram({ processId, focusNodeId, onBack, onLogout }) {
       const p = await api.getProcess(processId);
       const normalized = normalizeProcess(p);
       setServerProcess(normalized);
+      setStatus(p.status ?? null);
 
       const draftStr = localStorage.getItem(DRAFT_KEY(processId));
       if (draftStr) {
@@ -438,6 +441,13 @@ export default function Diagram({ processId, focusNodeId, onBack, onLogout }) {
     } finally {
       setSaving(false);
     }
+  }
+
+  async function changeStatus(next) {
+    const prev = status;
+    setStatus(next);
+    try { await api.setProcessStatus(process.id, next); }
+    catch (e) { setStatus(prev); alert('Status dəyişdirilə bilmədi: ' + e.message); }
   }
 
   function toggleEdit() {
@@ -1317,6 +1327,12 @@ export default function Diagram({ processId, focusNodeId, onBack, onLogout }) {
               {editMode ? <Eye size={16} /> : <Edit3 size={16} />}
               <span>{editMode ? 'Baxış' : 'Redaktə et'}</span>
             </button>
+          )}
+
+          {process && (
+            <div className="topbar-status">
+              <StatusControl value={status} editable={isAdmin} onChange={changeStatus} size={15} />
+            </div>
           )}
 
           <button className="logout-btn" onClick={logout}>

@@ -256,11 +256,34 @@ router.post('/:id/unarchive', async (req, res, next) => {
 });
 
 /* =========================== PROCESSES =========================== */
+const ALLOWED_STATUS = ['progress', 'done', 'notdone'];
+
 router.get('/:id', async (req, res, next) => {
   try {
     const file = await getFile(processPath(req.params.id));
     if (!file) return res.status(404).json({ error: 'Process not found' });
-    res.json(file.content);
+    // status lives on the index entry — merge it in so the diagram view has it
+    const idx = await readIndex();
+    const entry = idx.processes.find(p => Number(p.id) === Number(req.params.id));
+    res.json({ ...file.content, status: entry?.status ?? null });
+  } catch (e) { next(e); }
+});
+
+// Set (or clear) a diagram's status. body: { status: 'progress'|'done'|'notdone'|null }
+router.put('/:id/status', async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const raw = req.body?.status;
+    const status = raw == null || raw === '' ? null : String(raw);
+    if (status !== null && !ALLOWED_STATUS.includes(status)) {
+      return res.status(400).json({ error: 'Yanlış status' });
+    }
+    const idx = await readIndex();
+    const entry = idx.processes.find(p => Number(p.id) === id);
+    if (!entry) return res.status(404).json({ error: 'Process not found' });
+    if (status === null) delete entry.status; else entry.status = status;
+    await writeIndex(idx, `Set status for process ${id}`, req.user);
+    res.json({ id, status });
   } catch (e) { next(e); }
 });
 

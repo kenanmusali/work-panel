@@ -2,6 +2,8 @@ import { getToken, setToken } from './client.js';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
+// Şablonlar bölməsi — PDF bölməsi ilə eyni struktur, ayrı data (/api/templates).
+
 function authHeaders(extra = {}) {
   const h = { ...extra };
   const t = getToken();
@@ -48,7 +50,7 @@ export function fileToBase64(file) {
 }
 
 async function fetchBlob(id) {
-  const res = await fetch(`${API_URL}/api/pdfs/${id}/file`, { headers: authHeaders() });
+  const res = await fetch(`${API_URL}/api/templates/${id}/file`, { headers: authHeaders() });
   if (res.status === 401) {
     setToken(null);
     throw new Error('Unauthorized');
@@ -57,22 +59,22 @@ async function fetchBlob(id) {
   return res.blob();
 }
 
-export const pdfsApi = {
+export const templatesApi = {
   // Returns { groups, pdfs }
-  list: () => jsonRequest('GET', '/api/pdfs'),
+  list: () => jsonRequest('GET', '/api/templates'),
 
-  createGroup: (name, parentId) => jsonRequest('POST', '/api/pdfs/group', { name, parentId: parentId ?? null }),
-  renameGroup: (gid, name) => jsonRequest('PUT', `/api/pdfs/group/${gid}`, { name }),
-  moveGroup: (gid, parentId) => jsonRequest('PUT', `/api/pdfs/group/${gid}`, { parentId }),
-  deleteGroup: (gid) => jsonRequest('DELETE', `/api/pdfs/group/${gid}`),
+  createGroup: (name, parentId) => jsonRequest('POST', '/api/templates/group', { name, parentId: parentId ?? null }),
+  renameGroup: (gid, name) => jsonRequest('PUT', `/api/templates/group/${gid}`, { name }),
+  moveGroup: (gid, parentId) => jsonRequest('PUT', `/api/templates/group/${gid}`, { parentId }),
+  deleteGroup: (gid) => jsonRequest('DELETE', `/api/templates/group/${gid}`),
 
   // Ordering (drag & drop)
-  reorderGroups: (order) => jsonRequest('PUT', '/api/pdfs/groups/reorder', { order }),
-  reorderPdfs: (groupId, order) => jsonRequest('PUT', '/api/pdfs/reorder', { groupId, order }),
+  reorderGroups: (order) => jsonRequest('PUT', '/api/templates/groups/reorder', { order }),
+  reorderPdfs: (groupId, order) => jsonRequest('PUT', '/api/templates/reorder', { groupId, order }),
 
   create: ({ title, subtitle, groupId, file }) =>
     fileToBase64(file).then(dataBase64 =>
-      jsonRequest('POST', '/api/pdfs', {
+      jsonRequest('POST', '/api/templates', {
         title,
         subtitle: subtitle || '',
         groupId,
@@ -90,18 +92,18 @@ export const pdfsApi = {
       return fileToBase64(file).then(dataBase64 => {
         body.filename = file.name;
         body.dataBase64 = dataBase64;
-        return jsonRequest('PUT', `/api/pdfs/${id}`, body);
+        return jsonRequest('PUT', `/api/templates/${id}`, body);
       });
     }
-    return jsonRequest('PUT', `/api/pdfs/${id}`, body);
+    return jsonRequest('PUT', `/api/templates/${id}`, body);
   },
 
-  remove: (id) => jsonRequest('DELETE', `/api/pdfs/${id}`),
+  remove: (id) => jsonRequest('DELETE', `/api/templates/${id}`),
 
-  archive: (id) => jsonRequest('POST', `/api/pdfs/${id}/archive`),
-  unarchive: (id) => jsonRequest('POST', `/api/pdfs/${id}/unarchive`),
+  archive: (id) => jsonRequest('POST', `/api/templates/${id}/archive`),
+  unarchive: (id) => jsonRequest('POST', `/api/templates/${id}/unarchive`),
 
-  setStatus: (id, status) => jsonRequest('PUT', `/api/pdfs/${id}/status`, { status }),
+  setStatus: (id, status) => jsonRequest('PUT', `/api/templates/${id}/status`, { status }),
 
   async view(id) {
     const blob = await fetchBlob(id);

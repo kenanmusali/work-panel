@@ -101,6 +101,7 @@ const POLY = {
   preparation: '25,2 75,2 98,50 75,98 25,98 2,50',
   manualinput: '2,22 98,2 98,98 2,98',
   trapezoid: '22,4 78,4 98,96 2,96',
+  triangledown: '3,6 97,6 50,97',
 };
 
 function shapeMarkup(node, c) {
@@ -125,6 +126,11 @@ function shapeMarkup(node, c) {
     return `<path d="${d}" ${common} />`;
   }
   if (shape === 'delay') {
+    const r = h / 2;
+    const d = `M ${x} ${y} L ${x + w - r} ${y} A ${r} ${r} 0 0 1 ${x + w - r} ${y + h} L ${x} ${y + h} Z`;
+    return `<path d="${d}" ${common} />`;
+  }
+  if (shape === 'roundright') {
     const r = h / 2;
     const d = `M ${x} ${y} L ${x + w - r} ${y} A ${r} ${r} 0 0 1 ${x + w - r} ${y + h} L ${x} ${y + h} Z`;
     return `<path d="${d}" ${common} />`;

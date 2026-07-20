@@ -9,10 +9,13 @@ const DEFAULTS = {
   org_title: 'ABŞERON LOGİSTİKA MƏRKƏZİ',
   diagrams_page_title: 'İş Axışları',
   pdf_page_title: 'Normativ Sənədlər',
+  tmpl_page_title: 'Şablonlar',
   hub_diagrams_title: 'İş Axışları',
   hub_diagrams_sub: 'Proses xəritələri',
   hub_pdf_title: 'Normativ Sənədlər',
-  hub_pdf_sub: 'Prosedurlar, prosesler, əsəsnamələr'
+  hub_pdf_sub: 'Prosedurlar, prosesler, əsəsnamələr',
+  hub_tmpl_title: 'Şablonlar',
+  hub_tmpl_sub: 'Sənəd şablonları'
 };
 
 function requireAdmin(req, res, next) {

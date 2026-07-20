@@ -8,15 +8,16 @@
 
 export const SHAPES = [
   'pill', 'rect', 'diamond', 'parallelogram',
-  'subprocess', 'manualinput', 'document', 'preparation', 'delay', 'trapezoid'
+  'subprocess', 'manualinput', 'document', 'preparation', 'delay', 'trapezoid',
+  'triangledown', 'roundright'
 ];
 export const STYLES = ['solid', 'stroke', 'dashed'];
 
 // Shapes whose body is an SVG polygon/path overlay (ShapeBg in
 // DiagramCanvas.jsx) instead of a plain CSS-box (border-radius etc).
 // diamond/parallelogram were the original two; preparation, manualinput,
-// document and trapezoid reuse the same overlay mechanism.
-export const SVG_SHAPES = ['diamond', 'parallelogram', 'preparation', 'manualinput', 'document', 'trapezoid'];
+// document, trapezoid and triangledown reuse the same overlay mechanism.
+export const SVG_SHAPES = ['diamond', 'parallelogram', 'preparation', 'manualinput', 'document', 'trapezoid', 'triangledown'];
 
 export const SHAPE_LABEL = {
   pill: 'Pill',
@@ -29,6 +30,8 @@ export const SHAPE_LABEL = {
   preparation: 'Hazırlıq',
   delay: 'Gecikmə',
   trapezoid: 'Trapesiya',
+  triangledown: 'Tərs üçbucaq',
+  roundright: 'Sağ yumru',
 };
 
 export const STYLE_LABEL = {
@@ -67,6 +70,8 @@ export function nodeDefaults(shape) {
     case 'preparation': return { w: 190, h: 110 };
     case 'delay': return { w: 190, h: 60 };
     case 'trapezoid': return { w: 210, h: 80 };
+    case 'triangledown': return { w: 180, h: 130 };
+    case 'roundright': return { w: 210, h: 60 };
     default: return { w: 200, h: 70 };
   }
 }

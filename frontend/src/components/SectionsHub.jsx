@@ -46,6 +46,19 @@ function PdfTileIcon() {
 
 function FileTileIcon_REMOVED() { return null; }
 
+function TemplateTileIcon() {
+  return (
+    <svg viewBox="0 0 64 64" width="112" height="96" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="10" y="6" width="44" height="52" rx="4" />
+      <path d="M10 20h44" />
+      <path d="M18 30h12" />
+      <path d="M18 38h20" />
+      <path d="M18 46h16" />
+      <path d="M40 30h6" />
+    </svg>
+  );
+}
+
 export default function SectionsHub({ onPick, onLogout }) {
   const [now, setNow] = useState(new Date());
   const [settings, setSettings] = useState(null);
@@ -141,6 +154,27 @@ export default function SectionsHub({ onPick, onLogout }) {
                   subtitle0={t('hub_pdf_sub', 'Prosedurlar, prosesler, əsəsnamələr')}
                   onSave={({ name, subtitle }) =>
                     saveSettings({ hub_pdf_title: name, hub_pdf_sub: subtitle })}
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="tile-wrap">
+            <button className="section-tile" onClick={() => onPick('templates')}>
+              <div className="section-tile-icon"><TemplateTileIcon /></div>
+              <div className="section-tile-title">{t('hub_tmpl_title', 'Şablonlar')}</div>
+              <div className="section-tile-sub">{t('hub_tmpl_sub', 'Sənəd şablonları')}</div>
+            </button>
+            {isAdmin && settings && (
+              <div className="tile-edit">
+                <TitleEditButton
+                  heading="Bölmə adını dəyiş"
+                  nameLabel="Başlıq"
+                  name0={t('hub_tmpl_title', 'Şablonlar')}
+                  withSubtitle subtitleLabel="Alt yazı"
+                  subtitle0={t('hub_tmpl_sub', 'Sənəd şablonları')}
+                  onSave={({ name, subtitle }) =>
+                    saveSettings({ hub_tmpl_title: name, hub_tmpl_sub: subtitle })}
                 />
               </div>
             )}

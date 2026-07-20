@@ -12,6 +12,8 @@ import sened from '../assets/shapes/sened.png';
 import hazirliq from '../assets/shapes/hazirliq.png';
 import gecikme from '../assets/shapes/gecikme.png';
 import trapezoid from '../assets/shapes/trapezoid.png';
+import triangledown from '../assets/shapes/triangledown.png';
+import roundright from '../assets/shapes/roundright.png';
 
 export const SHAPE_IMAGE = {
   pill,
@@ -24,6 +26,8 @@ export const SHAPE_IMAGE = {
   preparation: hazirliq,
   delay: gecikme,
   trapezoid,
+  triangledown,
+  roundright,
 };
 
 export function shapeImage(shape) {

@@ -307,7 +307,7 @@ top: 50px;
 
 /* Hub tiles */
 .sections-grid {
-  display: grid; grid-template-columns: repeat(2, minmax(0, 230px));
+  display: grid; grid-template-columns: repeat(3, minmax(0, 230px));
   gap: 18px; width: 100%; justify-content: center;
 }
 .section-tile {
@@ -681,6 +681,18 @@ top: 50px;
 .node.delay {
   border-radius: var(--r-sm) 999px 999px var(--r-sm) / var(--r-sm) 50% 50% var(--r-sm);
 }
+
+/* roundright (sağ yumru) — rectangle with square left corners and a fully
+   rounded (pill) right side. Same asymmetric border-radius trick as delay. */
+.node.roundright {
+  border-radius: var(--r-sm) 999px 999px var(--r-sm) / var(--r-sm) 50% 50% var(--r-sm);
+  padding-right: 26px;
+}
+
+/* triangledown (tərs üçbucaq) — SVG-bodied; keep the label in the wide upper
+   half so it stays readable as the shape narrows toward the bottom point. */
+.node.triangledown { align-items: flex-start; padding-top: 12px; }
+.node.triangledown .text { flex: 0 1 auto; }
 
 /* connection handles — large hit area, small dot */
 .node .link-handle {
@@ -2316,3 +2328,52 @@ border-radius: var(--r-lg) var(--r-lg) 20px 20px;
 @media (max-width: 640px) {
   .ai-sidebar { width: 100vw; border-left: 0; }
 }
+
+/* ============================================================
+   ITEM STATUS — İş Axışları & Normativ Sənədlər
+   progress (Davam edir) · done (Bitib) · notdone (Bitməyib)
+   ============================================================ */
+.status-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: var(--r-pill);
+  font-size: 12px; font-weight: 600; line-height: 1;
+  border: 1px solid transparent; white-space: nowrap;
+}
+.status-badge.progress { color: #b45309; background: rgba(217,119,6,0.12); border-color: rgba(217,119,6,0.25); }
+.status-badge.done     { color: #15803d; background: rgba(22,163,74,0.12); border-color: rgba(22,163,74,0.25); }
+.status-badge.notdone  { color: #b91c1c; background: rgba(220,38,38,0.12); border-color: rgba(220,38,38,0.25); }
+
+/* interactive (admin) trigger */
+.status-control { position: relative; display: inline-flex; }
+.status-trigger {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 9px; border-radius: var(--r-pill);
+  font-size: 12px; font-weight: 600; line-height: 1; cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text-muted);
+  transition: background 0.15s var(--ease), border-color 0.15s var(--ease), color 0.15s var(--ease);
+}
+.status-trigger:hover { background: var(--bg-soft); }
+.status-trigger.progress { color: #b45309; background: rgba(217,119,6,0.12); border-color: rgba(217,119,6,0.3); }
+.status-trigger.done     { color: #15803d; background: rgba(22,163,74,0.12); border-color: rgba(22,163,74,0.3); }
+.status-trigger.notdone  { color: #b91c1c; background: rgba(220,38,38,0.12); border-color: rgba(220,38,38,0.3); }
+
+.status-menu {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 40;
+  background: var(--surface); border: 1px solid var(--border-soft);
+  border-radius: var(--r-md); box-shadow: var(--sh-lg);
+  padding: 5px; min-width: 160px; display: flex; flex-direction: column; gap: 2px;
+}
+.status-opt {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; border-radius: var(--r-sm); cursor: pointer;
+  font-size: 12.5px; font-weight: 500; text-align: left;
+  border: none; background: transparent; color: var(--text-secondary); width: 100%;
+}
+.status-opt:hover { background: var(--bg-soft); }
+.status-opt.active { background: var(--primary-soft); color: var(--primary-darker); font-weight: 600; }
+.status-opt.progress svg { color: #d97706; }
+.status-opt.done svg { color: #16a34a; }
+.status-opt.notdone svg { color: #dc2626; }
+
+/* status cell inside a diagram / pdf row */
+.row-status { display: inline-flex; align-items: center; margin-right: 8px; }

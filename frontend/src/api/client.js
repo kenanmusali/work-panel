@@ -55,6 +55,7 @@ export const api = {
   deleteProcess: (id) => request('DELETE', `/api/processes/${id}`),
   archiveProcess: (id) => request('POST', `/api/processes/${id}/archive`),
   unarchiveProcess: (id) => request('POST', `/api/processes/${id}/unarchive`),
+  setProcessStatus: (id, status) => request('PUT', `/api/processes/${id}/status`, { status }),
 
   // Diagram groups
   createGroup: (name, parentId) => request('POST', '/api/processes/group', { name, parentId: parentId ?? null }),

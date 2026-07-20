@@ -4,9 +4,9 @@ import { getFile, putFile, deleteFile, getBinary, putBinary, deleteBinary, attri
 const router = Router();
 const dataPath = () => (process.env.DATA_PATH || 'data').replace(/^\/|\/$/g, '');
 
-const pdfIndexPath     = () => `${dataPath()}/files/index.json`;
-const pdfArchivePath   = () => `${dataPath()}/files/archive.json`;
-const pdfFilePathFiles = (id) => `${dataPath()}/files/pdf/pdf-${id}.pdf`;
+const pdfIndexPath     = () => `${dataPath()}/templates/index.json`;
+const pdfArchivePath   = () => `${dataPath()}/templates/archive.json`;
+const pdfFilePathFiles = (id) => `${dataPath()}/templates/pdf/pdf-${id}.pdf`;
 const pdfFilePathLegacy  = (id) => `${dataPath()}/pdfs/files/pdf-${id}.pdf`;
 const pdfFilePathLegacy2 = (id) => `${dataPath()}/files/files/pdf-${id}.pdf`;
 
@@ -251,27 +251,6 @@ router.post('/:id/unarchive', requireAdmin, async (req, res, next) => {
     await writeIndex(idx, `Restore pdf ${id} from archive`, req.user);
     await writeArchive(archive, `Unarchive pdf ${id}`, req.user);
     res.json({ ok: true });
-  } catch (e) { next(e); }
-});
-
-/* =========================== STATUS =========================== */
-const ALLOWED_STATUS = ['progress', 'done', 'notdone'];
-
-// Set (or clear) a PDF's status. body: { status: 'progress'|'done'|'notdone'|null }
-router.put('/:id/status', requireAdmin, async (req, res, next) => {
-  try {
-    const id = Number(req.params.id);
-    const raw = req.body?.status;
-    const status = raw == null || raw === '' ? null : String(raw);
-    if (status !== null && !ALLOWED_STATUS.includes(status)) {
-      return res.status(400).json({ error: 'Yanlış status' });
-    }
-    const idx = await readIndex();
-    const entry = idx.pdfs.find(p => Number(p.id) === id);
-    if (!entry) return res.status(404).json({ error: 'PDF not found' });
-    if (status === null) delete entry.status; else entry.status = status;
-    await writeIndex(idx, `Set status for pdf ${id}`, req.user);
-    res.json({ id, status });
   } catch (e) { next(e); }
 });
 

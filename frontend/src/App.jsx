@@ -6,9 +6,10 @@ import SectionsHub from './components/SectionsHub.jsx';
 import Home from './components/Home.jsx';
 import Diagram from './components/Diagram.jsx';
 import PdfList from './components/pdfs/PdfList.jsx';
+import TemplateList from './components/pdfs/TemplateList.jsx';
 
 export default function App() {
-  // views: 'login' | 'hub' | 'diagrams' | 'pdfs' | 'files' | 'diagram'
+  // views: 'login' | 'hub' | 'diagrams' | 'pdfs' | 'templates' | 'files' | 'diagram'
   const [view, setView] = useState('login');
   const [user, setUser] = useState(null);
   const [processId, setProcessId] = useState(null);
@@ -83,6 +84,7 @@ export default function App() {
   function pickSection(key) {
     if (key === 'diagrams') setView('diagrams');
     else if (key === 'pdfs') setView('pdfs');
+    else if (key === 'templates') setView('templates');
   }
 
   function openProcess(id, nodeId = null) {
@@ -121,6 +123,10 @@ export default function App() {
 
   if (view === 'pdfs') {
     return <PdfList onBack={backToHub} onLogout={onLogout} />;
+  }
+
+  if (view === 'templates') {
+    return <TemplateList onBack={backToHub} onLogout={onLogout} />;
   }
 
   if (view === 'diagram') {
