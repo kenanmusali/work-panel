@@ -65,6 +65,8 @@ export default function SectionsHub({ onPick, onLogout }) {
   const [settings, setSettings] = useState(null);
   const role = localStorage.getItem('role');
   const isAdmin = role === 'admin';
+  const isEditor = role === 'editor';
+  const canEdit = isAdmin || isEditor; // may change existing text
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -106,7 +108,7 @@ export default function SectionsHub({ onPick, onLogout }) {
         <LogoFull size="large" />
         <h2 className="home-title">
           {t('org_title', 'ABŞERON LOGİSTİKA MƏRKƏZİ')}
-          {isAdmin && settings && (
+          {canEdit && settings && (
             <TitleEditButton
               heading="Başlığı dəyiş"
               nameLabel="Təşkilat adı"
@@ -123,7 +125,7 @@ export default function SectionsHub({ onPick, onLogout }) {
               <div className="section-tile-title">{t('hub_diagrams_title', 'İş Axışları')}</div>
               <div className="section-tile-sub">{t('hub_diagrams_sub', 'Proses xəritələri')}</div>
             </button>
-            {isAdmin && settings && (
+            {canEdit && settings && (
               <div className="tile-edit">
                 <TitleEditButton
                   heading="Bölmə adını dəyiş"
@@ -145,7 +147,7 @@ export default function SectionsHub({ onPick, onLogout }) {
               <div className="section-tile-title">{t('hub_pdf_title', 'Normativ Sənədlər')}</div>
               <div className="section-tile-sub">{t('hub_pdf_sub', 'Prosedurlar, prosesler, əsəsnamələr')}</div>
             </button>
-            {isAdmin && settings && (
+            {canEdit && settings && (
               <div className="tile-edit">
                 <TitleEditButton
                   heading="Bölmə adını dəyiş"
@@ -166,7 +168,7 @@ export default function SectionsHub({ onPick, onLogout }) {
               <div className="section-tile-title">{t('hub_tmpl_title', 'Şablonlar')}</div>
               <div className="section-tile-sub">{t('hub_tmpl_sub', 'Sənəd şablonları')}</div>
             </button>
-            {isAdmin && settings && (
+            {canEdit && settings && (
               <div className="tile-edit">
                 <TitleEditButton
                   heading="Bölmə adını dəyiş"

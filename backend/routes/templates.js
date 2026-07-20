@@ -60,6 +60,13 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+// Editor OR admin — editors may change existing text but not structure.
+function requireEditor(req, res, next) {
+  const r = req.user?.role;
+  if (r !== 'admin' && r !== 'editor') return res.status(403).json({ error: 'Forbidden' });
+  next();
+}
+
 /* =========================== LIST + GROUPS =========================== */
 router.get('/', async (_req, res, next) => {
   try {
@@ -312,7 +319,7 @@ router.post('/', requireAdmin, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.put('/:id', requireAdmin, async (req, res, next) => {
+router.put('/:id', requireEditor, async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     const { title, subtitle, filename, dataBase64, groupId } = req.body || {};

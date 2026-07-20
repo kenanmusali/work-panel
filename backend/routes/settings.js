@@ -23,6 +23,13 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+// Editor OR admin — editors may change existing text but not structure.
+function requireEditor(req, res, next) {
+  const r = req.user?.role;
+  if (r !== 'admin' && r !== 'editor') return res.status(403).json({ error: 'Forbidden' });
+  next();
+}
+
 async function readSettings() {
   const file = await getFile(settingsPath());
   return { ...DEFAULTS, ...(file?.content || {}) };
@@ -36,7 +43,7 @@ router.get('/', async (_req, res, next) => {
 });
 
 // PUT /api/settings — admin only; merges provided keys
-router.put('/', requireAdmin, async (req, res, next) => {
+router.put('/', requireEditor, async (req, res, next) => {
   try {
     const current = await readSettings();
     const incoming = req.body || {};

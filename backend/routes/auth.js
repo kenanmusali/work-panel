@@ -18,11 +18,18 @@ const USERS = [
     role: 'admin'
   },
   {
+    // Editor accounts — same "password == username" pattern. An editor may
+    // only change existing text (titles, node/edge labels, statuses); it can
+    // NOT create, delete, upload, reorder or edit diagram structure.
+    username: 'editor_2',
+    password: 'editor_2',
+    role: 'editor'
+  },
+  {
     username: 'user',
     password: 'user123',
     role: 'viewer'
   }
-  
 ];
 
 export function requireAuth(req, res, next) {

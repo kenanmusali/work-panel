@@ -101,7 +101,7 @@ function MenuItem({ pid, icon, label, danger, action, openItem, setOpenItem, sid
   );
 }
 
-export default function SelectionMenu({ selection, process, updateProcess, setSelection, anchorRect }) {
+export default function SelectionMenu({ selection, process, updateProcess, setSelection, anchorRect, textOnly = false }) {
   const [openItem, setOpenItem] = useState(null);
   const rootRef = useRef(null);
   const [side, setSide] = useState('right');
@@ -170,7 +170,7 @@ export default function SelectionMenu({ selection, process, updateProcess, setSe
             node={process.nodes.find(n => String(n.id) === String(selection.id))}
             process={process} updateProcess={updateProcess}
             openItem={openItem} setOpenItem={setOpenItem} side={side}
-            onDelete={() => setSelection(null)}
+            onDelete={() => setSelection(null)} textOnly={textOnly}
           />
         )}
         {selection.kind === 'lane' && (
@@ -178,14 +178,14 @@ export default function SelectionMenu({ selection, process, updateProcess, setSe
             lane={process.lanes[selection.id]} laneIndex={selection.id}
             process={process} updateProcess={updateProcess}
             openItem={openItem} setOpenItem={setOpenItem} side={side}
-            onDelete={() => setSelection(null)}
+            onDelete={() => setSelection(null)} textOnly={textOnly}
           />
         )}
         {selection.kind === 'edge' && (
           <EdgeMenu
             index={selection.id} process={process} updateProcess={updateProcess}
             openItem={openItem} setOpenItem={setOpenItem} side={side}
-            setSelection={setSelection}
+            setSelection={setSelection} textOnly={textOnly}
           />
         )}
       </div>
@@ -194,7 +194,7 @@ export default function SelectionMenu({ selection, process, updateProcess, setSe
 }
 
 /* ===================== Panel (lane) ===================== */
-function LaneMenu({ lane, laneIndex, process, updateProcess, openItem, setOpenItem, side, onDelete }) {
+function LaneMenu({ lane, laneIndex, process, updateProcess, openItem, setOpenItem, side, onDelete, textOnly }) {
   if (!lane) return <div className="sel-ctx-empty">Panel tapılmadı.</div>;
   function patch(field, value) {
     updateProcess(p => {
@@ -204,6 +204,17 @@ function LaneMenu({ lane, laneIndex, process, updateProcess, openItem, setOpenIt
     }, `lane-${laneIndex}-${field}`);
   }
   const nodeCount = process.nodes.filter(n => n.laneId === lane.id).length;
+
+  if (textOnly) {
+    return (
+      <MenuItem pid="lane-label" icon={<Type size={14} />} label="Panel adı" openItem={openItem} setOpenItem={setOpenItem} side={side}>
+        <div className="field-row col">
+          <label>Ad</label>
+          <textarea rows={2} value={lane.label} onChange={e => patch('label', e.target.value)} />
+        </div>
+      </MenuItem>
+    );
+  }
 
   return (
     <>
@@ -238,7 +249,7 @@ const SIDE_OPTS = [['top', 'üst'], ['right', 'sağ'], ['bottom', 'alt'], ['left
 const ARROW_OPTS = [['end', 'Son'], ['start', 'Başlanğıc'], ['both', 'Hər ikisi'], ['none', 'Yoxdur']];
 function castId(v) { return /^\d+$/.test(v) ? Number(v) : v; }
 
-function EdgeMenu({ index, process, updateProcess, openItem, setOpenItem, side, setSelection }) {
+function EdgeMenu({ index, process, updateProcess, openItem, setOpenItem, side, setSelection, textOnly }) {
   const edge = process.edges[index];
   if (!edge) return <div className="sel-ctx-empty">Ox tapılmadı.</div>;
 
@@ -258,6 +269,18 @@ function EdgeMenu({ index, process, updateProcess, openItem, setOpenItem, side, 
     if (!confirm('Bu oxu silmək istəyirsiniz?')) return;
     updateProcess(p => ({ ...p, edges: p.edges.filter((_, i) => i !== index) }));
     setSelection(null);
+  }
+
+  if (textOnly) {
+    return (
+      <MenuItem pid="edge-label" icon={<Type size={14} />} label="Mətn" openItem={openItem} setOpenItem={setOpenItem} side={side}>
+        <div className="field-row col">
+          <label>Ox etiketi</label>
+          <input value={edge.label || ''} placeholder="məs. Bəli / Xeyr"
+            onChange={e => patch({ label: e.target.value })} />
+        </div>
+      </MenuItem>
+    );
   }
 
   return (
@@ -337,7 +360,7 @@ function EdgeMenu({ index, process, updateProcess, openItem, setOpenItem, side, 
 }
 
 /* ===================== Node ===================== */
-function NodeMenu({ node, process, updateProcess, openItem, setOpenItem, side, onDelete }) {
+function NodeMenu({ node, process, updateProcess, openItem, setOpenItem, side, onDelete, textOnly }) {
   const [showPreview, setShowPreview] = useState(false);
   if (!node) return <div className="sel-ctx-empty">Node tapılmadı.</div>;
   const { shape, style } = nodeView(node);
@@ -427,6 +450,64 @@ function NodeMenu({ node, process, updateProcess, openItem, setOpenItem, side, o
     const next = [...sections];
     [next[i], next[j]] = [next[j], next[i]];
     setSections(next);
+  }
+
+  if (textOnly) {
+    // Editors change existing text only: node label + popup section texts.
+    // No shape/size/colour/icons, no add/remove/reorder, no delete.
+    return (
+      <>
+        <MenuItem pid="text" icon={<Type size={14} />} label="Mətn" openItem={openItem} setOpenItem={setOpenItem} side={side}>
+          <div className="field-row col">
+            <label>Mətn</label>
+            <textarea rows={3} value={node.text} onChange={e => patchText(e.target.value)} />
+          </div>
+          <div className="hint">Canvas-da mətnə iki dəfə klikləyərək birbaşa da redaktə edə bilərsiniz.</div>
+        </MenuItem>
+
+        <MenuItem pid="popup" icon={<PopupIcon size={14} />} label="Popup" openItem={openItem} setOpenItem={setOpenItem} side={side}>
+          <div className="sec-editor">
+            <div className="sec-editor-head">
+              <input className="sec-title" value={info.generalTitle || 'Ümumi məlumat'}
+                onChange={e => patchInfo('generalTitle', e.target.value)} placeholder="Bölmə adı" />
+            </div>
+            <textarea rows={4} placeholder="Hər abzas boş sətirlə ayrılır"
+              value={(info.general || []).join('\n\n')}
+              onChange={e => patchInfo('general', e.target.value.split('\n\n').filter(Boolean))} />
+          </div>
+
+          {sections.map((s, i) => (
+            <div className="sec-editor" key={s.id || i}>
+              <div className="sec-editor-head">
+                <input className="sec-title" value={s.title}
+                  onChange={e => patchSection(i, { title: e.target.value })} placeholder="Bölmə adı" />
+              </div>
+              <textarea rows={3}
+                placeholder={s.type === 'list' ? 'Hər sətir ayrı bənd' : 'Hər abzas boş sətirlə ayrılır'}
+                value={(s.items || []).join(s.type === 'list' ? '\n' : '\n\n')}
+                onChange={e => patchSection(i, {
+                  items: e.target.value.split(s.type === 'list' ? '\n' : '\n\n').filter(Boolean)
+                })} />
+            </div>
+          ))}
+
+          <div className="sec-editor">
+            <div className="sec-editor-head">
+              <input className="sec-title" value={info.risksTitle || 'Mümkün risklər'}
+                onChange={e => patchInfo('risksTitle', e.target.value)} placeholder="Bölmə adı (məcburi deyil)" />
+            </div>
+            <textarea rows={3} placeholder="Hər sətir ayrı risk (boş buraxsanız görünməyəcək)"
+              value={(info.risks || []).join('\n')}
+              onChange={e => patchInfo('risks', e.target.value.split('\n').filter(Boolean))} />
+          </div>
+
+          <button className="btn preview-btn" onClick={() => setShowPreview(v => !v)}>
+            <Eye size={14} /><span>{showPreview ? 'Önizləməni bağla' : 'Popup önizləməsi'}</span>
+          </button>
+          {showPreview && <PopupPreview node={node} />}
+        </MenuItem>
+      </>
+    );
   }
 
   return (
