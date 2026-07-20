@@ -1064,7 +1064,7 @@ details[open] summary::before { transform: rotate(90deg); }
 }
 
 .group-card.open { box-shadow: var(--sh-md); 
-border-radius: var(--r-lg) var(--r-lg) 20px 20px;
+border-radius: var(--r-lg) var(--r-lg) 25px 25px;
 }
 
 
