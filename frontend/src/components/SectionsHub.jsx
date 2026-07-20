@@ -162,7 +162,7 @@ export default function SectionsHub({ onPick, onLogout }) {
 
           <div className="tile-wrap">
             <button className="section-tile" onClick={() => onPick('templates')}>
-               <div className="section-tile-icon"><img src={Welcome1Img} /></div>
+               <div className="section-tile-icon"><img src={Welcome3Img} /></div>
               <div className="section-tile-title">{t('hub_tmpl_title', 'Şablonlar')}</div>
               <div className="section-tile-sub">{t('hub_tmpl_sub', 'Sənəd şablonları')}</div>
             </button>
