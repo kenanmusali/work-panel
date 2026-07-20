@@ -68,10 +68,10 @@
       "type": "rect",
       "style": "solid",
       "x": 810,
-      "y": 35,
+      "y": 40,
       "laneId": "lane-1784531661326",
-      "w": 360,
-      "h": 100,
+      "w": 350,
+      "h": 90,
       "text": "Sifarişin sistemə operator tərəfindən daxil edilməsi və sifarişin gözləmə rejimində saxlanılması",
       "info": {
         "general": [
@@ -83,8 +83,8 @@
       "id": 4,
       "type": "rect",
       "style": "solid",
-      "x": 1280,
-      "y": 55,
+      "x": 1290,
+      "y": 45,
       "laneId": "lane-1784531661326",
       "w": 250,
       "h": 80,
@@ -99,10 +99,10 @@
       "id": 5,
       "type": "rect",
       "style": "solid",
-      "x": 90,
+      "x": 100,
       "y": 200,
       "laneId": "lane-1784531682758",
-      "w": 200,
+      "w": 270,
       "h": 80,
       "text": "Mal qəbulu ilə bağlı sifarişin UDPAS-dən inteqrasiya olunması",
       "info": {
@@ -115,11 +115,11 @@
       "id": 6,
       "type": "rect",
       "style": "solid",
-      "x": 410,
-      "y": 190,
+      "x": 450,
+      "y": 200,
       "laneId": "lane-1784531682758",
-      "w": 200,
-      "h": 100,
+      "w": 280,
+      "h": 80,
       "text": "Gözlənilən mal qəbulunun əl terminalına ( TSD ) ötürülməsi",
       "info": {
         "general": [
@@ -131,8 +131,8 @@
       "id": 7,
       "type": "rect",
       "style": "solid",
-      "x": 90,
-      "y": 380,
+      "x": 100,
+      "y": 385,
       "laneId": "lane-1784531690390",
       "w": 200,
       "h": 70,
@@ -147,11 +147,11 @@
       "id": 8,
       "type": "rect",
       "style": "solid",
-      "x": 420,
-      "y": 365,
+      "x": 450,
+      "y": 380,
       "laneId": "lane-1784531690390",
-      "w": 200,
-      "h": 100,
+      "w": 280,
+      "h": 80,
       "text": "Qəbul olunmuş məhsulların çeşidlənməsi və patentləşdirilməsi ",
       "info": {
         "general": [
@@ -163,8 +163,8 @@
       "id": 9,
       "type": "rect",
       "style": "solid",
-      "x": 720,
-      "y": 375,
+      "x": 810,
+      "y": 380,
       "laneId": "lane-1784531690390",
       "w": 270,
       "h": 80,
@@ -184,23 +184,7 @@
       "laneId": "lane-1784531682758",
       "w": 310,
       "h": 70,
-      "text": "Müştəriyə qəbul prosesi yekunlaşdıqdan sonra sənədlərin gğndərilməsi",
-      "info": {
-        "general": [
-          ""
-        ]
-      }
-    },
-    {
-      "id": 11,
-      "type": "subprocess",
-      "style": "solid",
-      "x": 120,
-      "y": 530,
-      "laneId": "lane-1784531720646",
-      "w": 210,
-      "h": 70,
-      "text": "",
+      "text": "Müştəriyə qəbul prosesi yekunlaşdıqdan sonra sənədlərin göndərilməsi",
       "info": {
         "general": [
           ""
@@ -233,6 +217,22 @@
       "w": 200,
       "h": 70,
       "text": "Yeni addım",
+      "info": {
+        "general": [
+          ""
+        ]
+      }
+    },
+    {
+      "id": 11,
+      "type": "subprocess",
+      "style": "solid",
+      "x": 90,
+      "y": 530,
+      "laneId": "lane-1784531720646",
+      "w": 210,
+      "h": 70,
+      "text": "Yeni alt-proses",
       "info": {
         "general": [
           ""
@@ -290,25 +290,23 @@
       "e": "bottom"
     },
     {
-      "from": 1,
-      "to": 11,
-      "s": "left",
-      "e": "left",
-      "dashed": true
-    },
-    {
-      "from": 11,
-      "to": 12,
-      "s": "right",
-      "e": "left",
-      "dashed": true
-    },
-    {
       "from": 12,
       "to": 13,
       "s": "right",
       "e": "left",
       "dashed": true
+    },
+    {
+      "from": 4,
+      "to": 5,
+      "s": "bottom",
+      "e": "top"
+    },
+    {
+      "from": 1,
+      "to": 11,
+      "s": "left",
+      "e": "left"
     }
   ],
   "status": null
