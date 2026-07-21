@@ -4,7 +4,21 @@
   "subtitle": "ALM-İMS-PRD-002",
   "width": 2200,
   "height": 900,
-  "lanes": [],
+  "lanes": [
+    {
+      "id": "lane-1784619455276",
+      "label": "UDPAS",
+      "y": 20,
+      "h": 180
+    },
+    {
+      "id": "lane-1784619518685",
+      "label": "Billing",
+      "y": 200,
+      "h": 180
+    }
+  ],
   "nodes": [],
-  "edges": []
+  "edges": [],
+  "status": "done"
 }
