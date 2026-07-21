@@ -140,7 +140,8 @@
       "id": 110,
       "title": "Mal qəbulu əməliyyatlarının həyata keçirilməsi üzrə iş axını",
       "subtitle": "ALM-İMS-PRD-001",
-      "groupId": 7
+      "groupId": 7,
+      "status": "done"
     }
   ]
 }
