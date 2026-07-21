@@ -149,6 +149,12 @@
       "subtitle": "ALM-İMS-PRD-002",
       "groupId": 7,
       "status": "done"
+    },
+    {
+      "id": 112,
+      "title": "Yüklərin saxlanc anbarına qəbulu üzrə iş axını",
+      "subtitle": "ALM-İMS-PRD-003",
+      "groupId": 7
     }
   ]
 }
