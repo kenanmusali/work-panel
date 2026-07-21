@@ -27,18 +27,18 @@
       "id": "lane-1784623605456",
       "label": "ƏKTD",
       "y": 500,
-      "h": 210
+      "h": 260
     },
     {
       "id": "lane-1784623617560",
       "label": "ALŞ",
-      "y": 710,
+      "y": 760,
       "h": 210
     },
     {
       "id": "lane-1784623626914",
       "label": "SƏO",
-      "y": 920,
+      "y": 970,
       "h": 160
     }
   ],
@@ -208,7 +208,7 @@
       "type": "rect",
       "style": "solid",
       "x": 1000,
-      "y": 620,
+      "y": 670,
       "laneId": "lane-1784623605456",
       "w": 200,
       "h": 70,
@@ -240,7 +240,7 @@
       "type": "rect",
       "style": "solid",
       "x": 1000,
-      "y": 740,
+      "y": 790,
       "laneId": "lane-1784623617560",
       "w": 200,
       "h": 70,
@@ -256,7 +256,7 @@
       "type": "rect",
       "style": "solid",
       "x": 730,
-      "y": 740,
+      "y": 790,
       "laneId": "lane-1784623617560",
       "w": 200,
       "h": 70,
@@ -272,7 +272,7 @@
       "type": "subprocess",
       "style": "stroke",
       "x": 740,
-      "y": 830,
+      "y": 880,
       "laneId": "lane-1784623617560",
       "w": 200,
       "h": 70,
@@ -284,15 +284,15 @@
       }
     },
     {
-      "id": 14,
+      "id": 13,
       "type": "subprocess",
       "style": "solid",
-      "x": 735,
-      "y": 598,
+      "x": 730,
+      "y": 610,
       "laneId": "lane-1784623605456",
-      "w": 190,
-      "h": 60,
-      "text": "Yeni alt-proses",
+      "w": 200,
+      "h": 70,
+      "text": "Yeni addım",
       "info": {
         "general": [
           ""
@@ -355,6 +355,12 @@
       "to": 5,
       "s": "bottom",
       "e": "top"
+    },
+    {
+      "from": 7,
+      "to": 13,
+      "s": "bottom",
+      "e": "bottom"
     }
   ],
   "status": "done"
