@@ -156,6 +156,12 @@
       "subtitle": "ALM-İMS-PRD-003",
       "groupId": 7,
       "status": "done"
+    },
+    {
+      "id": 113,
+      "title": "Saxlanc anbarından yüklərin çıxarılması və müştəriyə təhvil verilməsi üzrə iş axını",
+      "subtitle": "ALM-İMS-PRD-004",
+      "groupId": 7
     }
   ]
 }
