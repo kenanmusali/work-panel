@@ -189,13 +189,61 @@
     },
     {
       "id": "7.1",
-      "type": "rect",
+      "type": "subprocess",
       "style": "solid",
       "x": 730,
       "y": 620,
       "laneId": "lane-1784623605456",
       "w": 200,
       "h": 70,
+      "text": "Yeni addım",
+      "info": {
+        "general": [
+          ""
+        ]
+      }
+    },
+    {
+      "id": 11,
+      "type": "rect",
+      "style": "solid",
+      "x": 1000,
+      "y": 520,
+      "laneId": "lane-1784623605456",
+      "w": 200,
+      "h": 70,
+      "text": "Yeni addım",
+      "info": {
+        "general": [
+          ""
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "type": "rect",
+      "style": "solid",
+      "x": 1000,
+      "y": 620,
+      "laneId": "lane-1784623605456",
+      "w": 200,
+      "h": 70,
+      "text": "Yeni addım",
+      "info": {
+        "general": [
+          ""
+        ]
+      }
+    },
+    {
+      "id": 12,
+      "type": "pill",
+      "style": "solid",
+      "x": 1270,
+      "y": 530,
+      "laneId": "lane-1784623605456",
+      "w": 200,
+      "h": 50,
       "text": "Yeni addım",
       "info": {
         "general": [
@@ -241,6 +289,18 @@
       "to": 7,
       "s": "right",
       "e": "left"
+    },
+    {
+      "from": 10,
+      "to": 11,
+      "s": "top",
+      "e": "bottom"
+    },
+    {
+      "from": 7,
+      "to": "7.1",
+      "s": "bottom",
+      "e": "top"
     }
   ],
   "status": "done"
