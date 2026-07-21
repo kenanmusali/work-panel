@@ -1342,6 +1342,7 @@ const MULTI_SWATCHES = ['#3a7894', '#1f4456', '#2563eb', '#7c3aed', '#db2777', '
 const MULTI_STYLES = [['solid', 'Tam'], ['stroke', 'Kontur'], ['dashed', 'Kəsik']];
 
 function MultiNodeMenu({ x, y, count, onClose, onColor, onStyle, onDelete }) {
+  const { t } = useLabels();
   useEffect(() => {
     function close(e) {
       // ignore clicks inside the menu

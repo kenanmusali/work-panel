@@ -62,7 +62,7 @@ function TemplateTileIcon() {
 }
 
 export default function SectionsHub({ onPick, onLogout }) {
-  const { t } = useLabels();
+  const { t: tLabel } = useLabels();
   const [now, setNow] = useState(new Date());
   const [settings, setSettings] = useState(null);
   const role = localStorage.getItem('role');
@@ -100,7 +100,7 @@ export default function SectionsHub({ onPick, onLogout }) {
           <div className="pill-chip">{fmtDate(now)}</div>
         </div>
         <button className="logout-btn" onClick={logout}>
-          <LogOut size={16} /><span>{t('topbar.logout', 'Çıxış')}</span>
+          <LogOut size={16} /><span>{tLabel('topbar.logout', 'Çıxış')}</span>
         </button>
       </div>
 <br />
