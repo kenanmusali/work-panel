@@ -21,24 +21,24 @@
       "id": "lane-1784623598576",
       "label": "BDD",
       "y": 340,
-      "h": 172
+      "h": 160
     },
     {
       "id": "lane-1784623605456",
       "label": "ƏKTD",
-      "y": 512,
+      "y": 500,
       "h": 160
     },
     {
       "id": "lane-1784623617560",
       "label": "ALŞ",
-      "y": 672,
+      "y": 660,
       "h": 160
     },
     {
       "id": "lane-1784623626914",
       "label": "SƏO",
-      "y": 832,
+      "y": 820,
       "h": 160
     }
   ],
@@ -63,7 +63,7 @@
       "id": "2.1",
       "type": "pill",
       "style": "solid",
-      "x": 90,
+      "x": 110,
       "y": 210,
       "laneId": "lane-1784623591488",
       "w": 200,
@@ -79,7 +79,7 @@
       "id": "1.2",
       "type": "rect",
       "style": "solid",
-      "x": 390,
+      "x": 420,
       "y": 24,
       "laneId": "lane-1784623585168",
       "w": 200,
@@ -95,9 +95,9 @@
       "id": 3,
       "type": "rect",
       "style": "solid",
-      "x": 90,
-      "y": 422,
-      "laneId": "lane-1784623598576",
+      "x": 110,
+      "y": 540,
+      "laneId": "lane-1784623605456",
       "w": 200,
       "h": 70,
       "text": "Yeni addım",
@@ -112,8 +112,40 @@
       "type": "rect",
       "style": "solid",
       "x": 420,
-      "y": 422,
+      "y": 400,
       "laneId": "lane-1784623598576",
+      "w": 200,
+      "h": 70,
+      "text": "Yeni addım",
+      "info": {
+        "general": [
+          ""
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "type": "rect",
+      "style": "solid",
+      "x": 410,
+      "y": 530,
+      "laneId": "lane-1784623605456",
+      "w": 200,
+      "h": 70,
+      "text": "Yeni addım",
+      "info": {
+        "general": [
+          ""
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "type": "rect",
+      "style": "solid",
+      "x": 360,
+      "y": 730,
+      "laneId": "lane-1784623617560",
       "w": 200,
       "h": 70,
       "text": "Yeni addım",
@@ -124,6 +156,26 @@
       }
     }
   ],
-  "edges": [],
+  "edges": [
+    {
+      "from": 1,
+      "to": "2.1",
+      "s": "bottom",
+      "e": "top"
+    },
+    {
+      "from": "1.2",
+      "to": "2.2",
+      "s": "bottom",
+      "e": "top"
+    },
+    {
+      "from": "2.1",
+      "to": 3,
+      "s": "bottom",
+      "e": "top",
+      "arrow": "end"
+    }
+  ],
   "status": "done"
 }
