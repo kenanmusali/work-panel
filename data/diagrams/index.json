@@ -168,7 +168,8 @@
       "id": 114,
       "title": "Mal çıxışı (dağıtım) əməliyyatlarının həyata keçirilməsi üzrə iş axını",
       "subtitle": "ALM-İMS-PRD-005",
-      "groupId": 7
+      "groupId": 7,
+      "status": "done"
     }
   ]
 }
