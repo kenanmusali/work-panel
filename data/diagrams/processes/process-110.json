@@ -4,7 +4,33 @@
   "subtitle": "ALM-İMS-PRD-001",
   "width": 2200,
   "height": 900,
-  "lanes": [],
+  "lanes": [
+    {
+      "id": "lane-1784618997981",
+      "label": "UDPAS",
+      "y": 20,
+      "h": 180
+    },
+    {
+      "id": "lane-1784619023621",
+      "label": "WMS",
+      "y": 200,
+      "h": 180
+    },
+    {
+      "id": "lane-1784619040389",
+      "label": "ANBAR",
+      "y": 380,
+      "h": 180
+    },
+    {
+      "id": "lane-1784619072316",
+      "label": "Billing",
+      "y": 560,
+      "h": 180
+    }
+  ],
   "nodes": [],
-  "edges": []
+  "edges": [],
+  "status": "done"
 }
