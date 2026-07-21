@@ -1,0 +1,313 @@
+{
+  "id": 110,
+  "title": "Mal qəbulu əməliyyatlarının həyata keçirilməsi üzrə iş axını",
+  "subtitle": "ALM-İMS-PRD-001",
+  "width": 2200,
+  "height": 900,
+  "lanes": [
+    {
+      "id": "lane-1784531661326",
+      "label": "UDPAS",
+      "y": 20,
+      "h": 160
+    },
+    {
+      "id": "lane-1784531682758",
+      "label": "WMS",
+      "y": 180,
+      "h": 160
+    },
+    {
+      "id": "lane-1784531690390",
+      "label": "ANBAR",
+      "y": 340,
+      "h": 160
+    },
+    {
+      "id": "lane-1784531720646",
+      "label": "Billing",
+      "y": 500,
+      "h": 160
+    }
+  ],
+  "nodes": [
+    {
+      "id": 1,
+      "type": "pill",
+      "style": "solid",
+      "x": 100,
+      "y": 40,
+      "laneId": "lane-1784531661326",
+      "w": 220,
+      "h": 90,
+      "text": "Müştəridən gözlənilən mal qəbulu sifarişi ( packing list )",
+      "info": {
+        "general": [
+          ""
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "type": "rect",
+      "style": "solid",
+      "x": 420,
+      "y": 50,
+      "laneId": "lane-1784531661326",
+      "w": 250,
+      "h": 70,
+      "text": "Yeni mal olduqda sistemdə yeni mal növünün yaradılması",
+      "info": {
+        "general": [
+          ""
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "type": "rect",
+      "style": "solid",
+      "x": 810,
+      "y": 40,
+      "laneId": "lane-1784531661326",
+      "w": 350,
+      "h": 90,
+      "text": "Sifarişin sistemə operator tərəfindən daxil edilməsi və sifarişin gözləmə rejimində saxlanılması",
+      "info": {
+        "general": [
+          ""
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "type": "rect",
+      "style": "solid",
+      "x": 1290,
+      "y": 45,
+      "laneId": "lane-1784531661326",
+      "w": 250,
+      "h": 80,
+      "text": "Yükü gətirən nəqliyyat vasitəsinin əraziyə girişinin təmin edilməsi",
+      "info": {
+        "general": [
+          ""
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "type": "rect",
+      "style": "solid",
+      "x": 100,
+      "y": 200,
+      "laneId": "lane-1784531682758",
+      "w": 270,
+      "h": 80,
+      "text": "Mal qəbulu ilə bağlı sifarişin UDPAS-dən inteqrasiya olunması",
+      "info": {
+        "general": [
+          ""
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "type": "rect",
+      "style": "solid",
+      "x": 450,
+      "y": 200,
+      "laneId": "lane-1784531682758",
+      "w": 280,
+      "h": 80,
+      "text": "Gözlənilən mal qəbulunun əl terminalına ( TSD ) ötürülməsi",
+      "info": {
+        "general": [
+          ""
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "type": "rect",
+      "style": "solid",
+      "x": 100,
+      "y": 385,
+      "laneId": "lane-1784531690390",
+      "w": 200,
+      "h": 70,
+      "text": "Məhsulların anbara fiziki  qəbulu",
+      "info": {
+        "general": [
+          ""
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "type": "rect",
+      "style": "solid",
+      "x": 450,
+      "y": 380,
+      "laneId": "lane-1784531690390",
+      "w": 280,
+      "h": 80,
+      "text": "Qəbul olunmuş məhsulların çeşidlənməsi və patentləşdirilməsi ",
+      "info": {
+        "general": [
+          ""
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "type": "rect",
+      "style": "solid",
+      "x": 810,
+      "y": 380,
+      "laneId": "lane-1784531690390",
+      "w": 270,
+      "h": 80,
+      "text": "Məhsullar terminalla sistem üzrə qəbulu və xanalara yerləşdirilməsi",
+      "info": {
+        "general": [
+          ""
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "type": "rect",
+      "style": "solid",
+      "x": 1060,
+      "y": 240,
+      "laneId": "lane-1784531682758",
+      "w": 310,
+      "h": 70,
+      "text": "Müştəriyə qəbul prosesi yekunlaşdıqdan sonra sənədlərin göndərilməsi",
+      "info": {
+        "general": [
+          ""
+        ]
+      }
+    },
+    {
+      "id": 12,
+      "type": "rect",
+      "style": "solid",
+      "x": 420,
+      "y": 530,
+      "laneId": "lane-1784531720646",
+      "w": 200,
+      "h": 70,
+      "text": "Yeni addım",
+      "info": {
+        "general": [
+          ""
+        ]
+      }
+    },
+    {
+      "id": 13,
+      "type": "rect",
+      "style": "solid",
+      "x": 730,
+      "y": 530,
+      "laneId": "lane-1784531720646",
+      "w": 200,
+      "h": 70,
+      "text": "Yeni addım",
+      "info": {
+        "general": [
+          ""
+        ]
+      }
+    },
+    {
+      "id": 11,
+      "type": "subprocess",
+      "style": "solid",
+      "x": 90,
+      "y": 530,
+      "laneId": "lane-1784531720646",
+      "w": 210,
+      "h": 70,
+      "text": "Yeni alt-proses",
+      "info": {
+        "general": [
+          ""
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": 2,
+      "to": 3,
+      "s": "right",
+      "e": "left"
+    },
+    {
+      "from": 5,
+      "to": 6,
+      "s": "right",
+      "e": "left"
+    },
+    {
+      "from": 6,
+      "to": 7,
+      "s": "bottom",
+      "e": "top"
+    },
+    {
+      "from": 7,
+      "to": 8,
+      "s": "right",
+      "e": "left"
+    },
+    {
+      "from": 8,
+      "to": 9,
+      "s": "right",
+      "e": "left"
+    },
+    {
+      "from": 1,
+      "to": 2,
+      "s": "right",
+      "e": "left"
+    },
+    {
+      "from": 3,
+      "to": 4,
+      "s": "right",
+      "e": "left"
+    },
+    {
+      "from": 9,
+      "to": 10,
+      "s": "right",
+      "e": "bottom"
+    },
+    {
+      "from": 12,
+      "to": 13,
+      "s": "right",
+      "e": "left",
+      "dashed": true
+    },
+    {
+      "from": 4,
+      "to": 5,
+      "s": "bottom",
+      "e": "top"
+    },
+    {
+      "from": 1,
+      "to": 11,
+      "s": "left",
+      "e": "left"
+    }
+  ],
+  "status": null
+}
