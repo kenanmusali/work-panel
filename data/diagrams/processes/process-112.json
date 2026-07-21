@@ -284,9 +284,9 @@
       }
     },
     {
-      "id": 13,
+      "id": "7.1",
       "type": "subprocess",
-      "style": "solid",
+      "style": "stroke",
       "x": 730,
       "y": 610,
       "laneId": "lane-1784623605456",
@@ -358,7 +358,7 @@
     },
     {
       "from": 7,
-      "to": 13,
+      "to": "7.1",
       "s": "bottom",
       "e": "bottom"
     }
