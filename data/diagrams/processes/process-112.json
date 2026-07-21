@@ -3,8 +3,46 @@
   "title": "Yüklərin saxlanc anbarına qəbulu üzrə iş axını",
   "subtitle": "ALM-İMS-PRD-003",
   "width": 2200,
-  "height": 900,
-  "lanes": [],
+  "height": 1140,
+  "lanes": [
+    {
+      "id": "lane-1784623585168",
+      "label": "Müştəri",
+      "y": 20,
+      "h": 180
+    },
+    {
+      "id": "lane-1784623591488",
+      "label": "BD",
+      "y": 200,
+      "h": 180
+    },
+    {
+      "id": "lane-1784623598576",
+      "label": "BDD",
+      "y": 380,
+      "h": 180
+    },
+    {
+      "id": "lane-1784623605456",
+      "label": "ƏKTD",
+      "y": 560,
+      "h": 180
+    },
+    {
+      "id": "lane-1784623617560",
+      "label": "ALŞ",
+      "y": 740,
+      "h": 180
+    },
+    {
+      "id": "lane-1784623626914",
+      "label": "SƏO",
+      "y": 920,
+      "h": 180
+    }
+  ],
   "nodes": [],
-  "edges": []
+  "edges": [],
+  "status": "done"
 }
