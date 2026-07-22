@@ -16,15 +16,20 @@
       node scripts/seed-diagrams.mjs
 */
 
-import 'dotenv/config';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { MongoClient } from 'mongodb';
+import { config as loadEnv } from 'dotenv';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '../..');
 const DIAGRAMS_DIR = path.join(REPO_ROOT, 'data', 'diagrams');
+
+// .env can live at the project root (Map-Panel/.env) or inside backend/ —
+// load whichever exists, root takes priority since that's where yours is.
+loadEnv({ path: path.join(REPO_ROOT, '.env') });
+loadEnv({ path: path.join(REPO_ROOT, 'backend', '.env') });
 
 const MONGODB_URI = process.env.MONGODB_URI;
 const DB_NAME = process.env.MONGODB_DB || 'mappanel';

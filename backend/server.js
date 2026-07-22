@@ -1,4 +1,12 @@
-import 'dotenv/config';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { config as loadEnv } from 'dotenv';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// .env can live at the project root (Map-Panel/.env, which is where yours is)
+// or inside backend/ — load whichever exists so local dev picks it up either way.
+loadEnv({ path: path.join(__dirname, '..', '.env') });
+loadEnv({ path: path.join(__dirname, '.env') });
 import express from 'express';
 import cors from 'cors';
 
