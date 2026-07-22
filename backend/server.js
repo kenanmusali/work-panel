@@ -104,6 +104,7 @@ app.use((err, _req, res, _next) => {
   });
 });
 
+
 // LOCAL ONLY
 if (process.env.VERCEL !== '1') {
   app.listen(PORT, () => {
