@@ -125,6 +125,53 @@ export async function putFile(p, contentObject /* , { message, sha, author } —
   }
 }
 
+// Same idea as services/github.js's diagnose() — surfaces the real reason
+// things aren't working instead of a bare 500, wired into GET /api/debug.
+export async function diagnose() {
+  const out = {
+    isVercel,
+    mongoConfigured: hasMongo(),
+    db: DB_NAME,
+    collection: COLLECTION
+  };
+
+  if (!hasMongo()) {
+    out.note = 'MONGODB_URI is not set for this deployment — check Vercel Project Settings > Environment Variables, and that you redeployed after adding it.';
+    return out;
+  }
+
+  try {
+    const col = await collection();
+    // ping-style probe: cheap and proves auth + network reachability
+    await col.estimatedDocumentCount();
+    out.mongoConnection = 'ok';
+  } catch (e) {
+    out.mongoConnection = 'ERROR: ' + e.message;
+    return out;
+  }
+
+  try {
+    const idx = await getFile('data/diagrams/index.json');
+    out.diagramsResolved = idx ? (idx.content?.processes?.length ?? 0) : 'NOT FOUND (run the seed script)';
+  } catch (e) {
+    out.diagramsResolved = 'ERR: ' + e.message;
+  }
+
+  // write + read-back + delete on a throwaway key, so a bad user/pass with
+  // read-only rights (or a wrong DB name with no write access) shows up here
+  try {
+    const probeKey = 'data/.write-probe.json';
+    await putFile(probeKey, { ok: true, ts: Date.now() });
+    const back = await getFile(probeKey);
+    out.writeProbe = back ? 'ok' : 'wrote but read-back failed';
+    await deleteFile(probeKey);
+  } catch (e) {
+    out.writeProbe = 'ERROR: ' + e.message;
+  }
+
+  return out;
+}
+
 export async function deleteFile(p /* , { message, author } — ignored */) {
   if (!hasMongo()) {
     if (isVercel) return { ok: true }; // nothing persistent to remove

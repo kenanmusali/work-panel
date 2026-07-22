@@ -10,6 +10,7 @@ import settingsRouter from './routes/settings.js';
 import labelsRouter from './routes/labels.js';
 import aiRouter from './routes/ai.js';
 import { diagnose } from './services/github.js';
+import { diagnose as diagnoseMongo } from './services/store.js';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -59,11 +60,10 @@ app.get(['/api/health', '/health'], (_req, res) => {
 
 // DEBUG — public, no secrets. Tells you why data isn't loading on Vercel.
 app.get(['/api/debug', '/debug'], async (_req, res) => {
-  try {
-    res.json(await diagnose());
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  const out = {};
+  try { out.github = await diagnose(); } catch (e) { out.github = { error: e.message }; }
+  try { out.mongo = await diagnoseMongo(); } catch (e) { out.mongo = { error: e.message }; }
+  res.json(out);
 });
 
 // PUBLIC ROUTES
