@@ -347,7 +347,13 @@ export default function DiagramCanvas({
     if (!link) return;
     if (link.reconnect) {
       if (targetNode && onEdgeReconnect) {
-        const toSide = nearestSide(targetNode, link.cur);
+        const edge = process.edges[link.reconnect.edgeIndex];
+        const draggingFrom = link.reconnect.end === 'from';
+        const fixedId = edge && (draggingFrom ? edge.to : edge.from);
+        const fixedNode = process.nodes.find(n => String(n.id) === String(fixedId));
+        const fixedSide = edge && (draggingFrom ? (edge.e || 'left') : (edge.s || 'right'));
+        const fromPt = fixedNode ? anchor(fixedNode, fixedSide) : null;
+        const toSide = nearestSide(targetNode, link.cur, fromPt);
         onEdgeReconnect(link.reconnect.edgeIndex, link.reconnect.end, targetNode.id, toSide);
       }
       setLink(null);
@@ -355,7 +361,7 @@ export default function DiagramCanvas({
       return;
     }
     if (targetNode && String(targetNode.id) !== String(link.fromId) && onCreateEdge) {
-      const toSide = nearestSide(targetNode, link.cur);
+      const toSide = nearestSide(targetNode, link.cur, link.from);
       onCreateEdge(link.fromId, link.fromSide, targetNode.id, toSide);
       didLinkRef.current = true;
       setTimeout(() => { didLinkRef.current = false; }, 0);
@@ -721,7 +727,15 @@ function ShapeBg({ shape, style }) {
   return null;
 }
 
-function nearestSide(node, pt) {
+function nearestSide(node, pt, fromPt) {
+  // With a source point to reference, pick the side facing back toward it —
+  // e.g. a node sitting directly below its source always connects on 'top',
+  // regardless of exactly where inside it the arrow was dropped. Without
+  // this, dropping in the lower half of a small/close node (like a stacked
+  // sub-process box) could measure closer to its bottom edge and snap the
+  // arrow in backwards.
+  if (fromPt) return sideTowardPoint(fromPt, { x: node.x + node.w / 2, y: node.y + node.h / 2 });
+
   const dTop = Math.abs(pt.y - node.y);
   const dBottom = Math.abs(pt.y - (node.y + node.h));
   const dLeft = Math.abs(pt.x - node.x);
@@ -763,7 +777,7 @@ function computeLinkPath(link, process) {
     const target = link.overId != null ? nodeMap[String(link.overId)] : null;
     let movingNode, movingSide;
     if (target && String(target.id) !== String(fixedId)) {
-      movingNode = target; movingSide = nearestSide(target, link.cur);
+      movingNode = target; movingSide = nearestSide(target, link.cur, anchor(fixedNode, fixedSide));
     } else {
       movingNode = V(link.cur);
       movingSide = sideTowardPoint(anchor(fixedNode, fixedSide), link.cur);
@@ -790,7 +804,7 @@ function computeLinkPath(link, process) {
   const target = link.overId != null ? nodeMap[String(link.overId)] : null;
   let toN, toS;
   if (target && String(target.id) !== String(link.fromId)) {
-    toN = target; toS = nearestSide(target, link.cur);
+    toN = target; toS = nearestSide(target, link.cur, anchor(fromNode, fromSide));
   } else {
     toN = V(link.cur); toS = sideTowardPoint(anchor(fromNode, fromSide), link.cur);
   }
@@ -1215,6 +1229,57 @@ function detourAroundBox(p1, p2, box) {
   return null;
 }
 
+function pathClearOfBoxes(pts, boxes) {
+  for (let i = 0; i < pts.length - 1; i++) {
+    for (const box of boxes) {
+      if (segHitsBox(pts[i], pts[i + 1], box, 2)) return false;
+    }
+  }
+  return true;
+}
+
+// If the blocked segment's near end is a free bend (fed by a perpendicular
+// segment, not one of the fixed stub points), try pushing that whole shared
+// run past the box instead of notching around it right at the collision.
+// This turns "short stub, then jog out and back" into one clean elbow that
+// simply reaches further (fix 13). Falls back to null so the caller can
+// still notch when no such run exists or sliding it doesn't actually clear.
+function trySlideBend(pts, hitIdx, hitBox, boxes, stubStart, stubEnd) {
+  const p1 = pts[hitIdx], p2 = pts[hitIdx + 1];
+  const segVertical = Math.abs(p1.x - p2.x) < 0.5; // blocked segment runs along y
+
+  const tryNeighbor = (feedIdx, sharedIdx, boundaryIdx) => {
+    if (feedIdx < 0 || feedIdx > pts.length - 1 || sharedIdx === boundaryIdx) return null;
+    const feed = pts[feedIdx], shared = pts[sharedIdx];
+    const feedVertical = Math.abs(feed.x - shared.x) < 0.5;
+    if (feedVertical === segVertical) return null; // not perpendicular — no run to slide
+
+    const cur = segVertical ? shared.y : shared.x;
+    const candidates = segVertical
+      ? [hitBox.y - CLEARANCE, hitBox.y + hitBox.h + CLEARANCE]
+      : [hitBox.x - CLEARANCE, hitBox.x + hitBox.w + CLEARANCE];
+    candidates.sort((a, b) => Math.abs(a - cur) - Math.abs(b - cur));
+
+    for (const val of candidates) {
+      const out = pts.slice();
+      if (segVertical) {
+        out[sharedIdx] = { ...shared, y: val };
+        out[feedIdx] = { ...feed, y: val };
+      } else {
+        out[sharedIdx] = { ...shared, x: val };
+        out[feedIdx] = { ...feed, x: val };
+      }
+      const deduped = dedupe(out);
+      if (pathClearOfBoxes(deduped, boxes)) return deduped;
+    }
+    return null;
+  };
+
+  // hitIdx is the shared point on the near side of the blocked segment;
+  // hitIdx+1 is the shared point on the far side.
+  return tryNeighbor(hitIdx - 1, hitIdx, stubStart) || tryNeighbor(hitIdx + 2, hitIdx + 1, stubEnd);
+}
+
 function avoidObstacles(points, obstacles, protectEnds = false) {
   if (!obstacles || !obstacles.length || points.length < 2) return points;
   const boxes = obstacles.map(toBox);
@@ -1233,6 +1298,12 @@ function avoidObstacles(points, obstacles, protectEnds = false) {
       if (hit) break;
     }
     if (!hit) break;
+
+    const stubStart = protectEnds ? 1 : -1;
+    const stubEnd = protectEnds ? pts.length - 2 : -1;
+    const slid = trySlideBend(pts, hitIdx, hit, boxes, stubStart, stubEnd);
+    if (slid) { pts = slid; continue; }
+
     const detour = detourAroundBox(pts[hitIdx], pts[hitIdx + 1], hit);
     if (!detour) break;
     pts = [...pts.slice(0, hitIdx + 1), ...detour, ...pts.slice(hitIdx + 1)];

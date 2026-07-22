@@ -37,7 +37,20 @@ function normPid(g) {
     : Number(g.parentId);
 }
 
-export default function Home({ onOpen, onLogout, onBack }) {
+// A group and every ancestor above it, so a nested folder can be opened
+// along with all the folders containing it.
+function ancestorGroupIds(groupId, gs) {
+  const ids = [];
+  let cur = gs.find(g => Number(g.id) === Number(groupId));
+  while (cur) {
+    ids.push(cur.id);
+    const pid = normPid(cur);
+    cur = pid != null ? gs.find(g => Number(g.id) === pid) : null;
+  }
+  return ids;
+}
+
+export default function Home({ onOpen, onLogout, onBack, focusProcessId }) {
   const { t, tByText, rawByText, LabelPen } = useLabels();
   const [now, setNow] = useState(new Date());
   const [query, setQuery] = useState('');
@@ -55,6 +68,10 @@ export default function Home({ onOpen, onLogout, onBack }) {
   const [pendingArchive, setPendingArchive] = useState(null); // process id awaiting confirm
   const [aiOpen, setAiOpen] = useState(false);
   const searchInputRef = useRef(null);
+  // ---- restoring position on return from a diagram (fix 15) ----
+  const itemRefs = useRef({});         // processId -> row DOM node
+  const [highlightId, setHighlightId] = useState(null);
+  const restoredForRef = useRef(null); // last focusProcessId we already handled
 
   // ---- staged (unsaved) folder edits ----
   // Folder create/rename/move/delete/reorder are applied to local state only.
@@ -98,6 +115,32 @@ export default function Home({ onOpen, onLogout, onBack }) {
   useEffect(() => { load(); }, []);
   useEffect(() => { api.getSettings().then(setSettings).catch(() => setSettings({})); }, []);
   useEffect(() => { if (searchOpen) searchInputRef.current?.focus(); }, [searchOpen]);
+
+  // Restore position for the diagram we just came back from: open its
+  // folder chain, scroll it into view, and highlight it for a couple
+  // seconds so it's easy to spot again (fix 15).
+  useEffect(() => {
+    if (loading || focusProcessId == null) return;
+    if (restoredForRef.current === focusProcessId) return;
+    const proc = processes.find(p => String(p.id) === String(focusProcessId));
+    if (!proc) return;
+    restoredForRef.current = focusProcessId;
+
+    const chain = ancestorGroupIds(proc.groupId, groups);
+    if (chain.length) {
+      setExpanded(prev => {
+        const o = { ...prev };
+        chain.forEach(id => { o[id] = true; });
+        return o;
+      });
+    }
+    setHighlightId(proc.id);
+    const raf = requestAnimationFrame(() => {
+      itemRefs.current[proc.id]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    });
+    const timer = setTimeout(() => setHighlightId(null), 2000);
+    return () => { cancelAnimationFrame(raf); clearTimeout(timer); };
+  }, [loading, focusProcessId, processes, groups]);
 
   async function saveSettings(patch) {
     const next = await api.updateSettings(patch);
@@ -772,7 +815,8 @@ export default function Home({ onOpen, onLogout, onBack }) {
               return (
                 <div
                   key={p.id}
-                  className={`process-item diagram-row ${isItemOver ? 'drag-over' : ''}`}
+                  ref={el => { if (el) itemRefs.current[p.id] = el; }}
+                  className={`process-item diagram-row ${isItemOver ? 'drag-over' : ''} ${highlightId === p.id ? 'just-opened' : ''}`}
                   onClick={() => onOpen(p.id)}
                   draggable={dndOn}
                   onDragStart={e => onItemDragStart(e, g.id, p.id)}
