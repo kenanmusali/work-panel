@@ -1,5 +1,11 @@
 {
-  "groups": [],
+  "groups": [
+    {
+      "id": 1,
+      "name": "Testing",
+      "parentId": null
+    }
+  ],
   "pdfs": [],
   "files": []
 }
